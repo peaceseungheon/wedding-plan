@@ -9,17 +9,22 @@
     "lint": "eslint",
     "test": "vitest run",
     "db:up": "docker compose up -d",
-    "db:migrate": "prisma migrate dev"
+    "db:migrate": "prisma migrate dev",
+    "import:benchmarks": "tsx scripts/import-benchmarks.ts"
   },
   "dependencies": {
+    "@prisma/adapter-mariadb": "^7.10.0",
+    "bcryptjs": "^3.0.3",
     "next": "16.3.7",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "tsx": "^4.23.15"
   },
   "devDependencies": {
     "@prisma/client": "^7.10.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/react": "^16.3.3",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
