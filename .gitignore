@@ -7,7 +7,7 @@ coverage/
 .omo/
 .omc/
 .codegraph/
-storage/
+/storage/
 *.tsbuildinfo
 .DS_Store
 *.log
