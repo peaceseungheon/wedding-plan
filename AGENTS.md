@@ -18,6 +18,7 @@
 | [커밋 컨벤션](docs/guidelines/version-control/commit-conventions.md) | 커밋 작성 전 |
 | [스택 지침](docs/guidelines/stack/README.md) | 특정 언어, 프레임워크 작업 시작 전, 반드시 여기부터 |
 | [스택 지침 양식](docs/guidelines/stack/_template.md) | 새 스택 지침 문서를 만들 때 쓰는 양식 |
+| [TypeScript 스택 지침](docs/guidelines/stack/typescript.md) | TypeScript, Next.js 코드 작업 시작 전 |
 
 ## 3. 경계
 
