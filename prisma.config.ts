@@ -6,6 +6,9 @@ import "dotenv/config";
 
 export default defineConfig({
   schema: path.join(import.meta.dirname, "prisma", "schema.prisma"),
+  migrations: {
+    seed: "tsx prisma/seed.ts",
+  },
   datasource: {
     url: env("DATABASE_URL"),
   },
