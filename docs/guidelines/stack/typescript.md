@@ -10,7 +10,7 @@
 
 ## 버전·도구체인
 
-- 언어·런타임: TypeScript 7.0.2, Node.js 24 LTS(문서 작성 시점 v24.13.0)
+- 언어·런타임: TypeScript 6.0.3(스테이블), Node.js 24 LTS(문서 작성 시점 v24.13.0) — typescript-eslint 8.x 호환 (eslint-config-next가 TS 7에서 하드 에러)
 - 패키지 매니저: npm 11.6.2. yarn, pnpm, bun은 쓰지 않는다.
 - 프레임워크·주요 라이브러리:
   - Next.js 16.3.7 (App Router)
