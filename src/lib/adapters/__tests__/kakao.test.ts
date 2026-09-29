@@ -1,0 +1,102 @@
+import { type Mock, afterEach, describe, expect, it, vi } from "vitest";
+import { searchVendors } from "@/lib/adapters/kakao";
+
+const API_KEY = "test-rest-api-key";
+
+function jsonResponse(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), { status });
+}
+
+function stubFetch(): Mock<typeof fetch> {
+  const fetchMock: Mock<typeof fetch> = vi.fn();
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
+describe("searchVendors", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it("maps kakao documents into places when the API responds 2xx", async () => {
+    vi.stubEnv("KAKAO_API_KEY", API_KEY);
+    const fetchMock = stubFetch();
+    fetchMock.mockResolvedValue(
+      jsonResponse(200, {
+        documents: [
+          {
+            place_name: "라온제나 웨딩컨벤션",
+            address_name: "서울특별시 중구 을지로 12",
+            road_address_name: "서울특별시 중구 을지로 12",
+            phone: "02-1234-5678",
+            place_url: "http://place.map.kakao.com/111",
+          },
+          {
+            place_name: "더 라움",
+            address_name: "서울특별시 송파구 올림픽로 35",
+            road_address_name: "",
+            phone: "",
+            place_url: "http://place.map.kakao.com/222",
+          },
+        ],
+      }),
+    );
+
+    const result = await searchVendors("웨딩홀");
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [url, init] = fetchMock.mock.calls[0];
+    const requestUrl = new URL(String(url));
+    expect(requestUrl.origin + requestUrl.pathname).toBe(
+      "https://dapi.kakao.com/v2/local/search/keyword.json",
+    );
+    expect(requestUrl.searchParams.get("query")).toBe("웨딩홀");
+    // 키는 헤더로만 간다 — URL에 실리면 로그에 새므로 금지다.
+    expect(String(url)).not.toContain(API_KEY);
+    expect(init?.headers).toEqual({ Authorization: `Bearer ${API_KEY}` });
+
+    expect(result).toEqual({
+      ok: true,
+      results: [
+        {
+          placeName: "라온제나 웨딩컨벤션",
+          address: "서울특별시 중구 을지로 12",
+          roadAddress: "서울특별시 중구 을지로 12",
+          phone: "02-1234-5678",
+          placeUrl: "http://place.map.kakao.com/111",
+        },
+        {
+          placeName: "더 라움",
+          address: "서울특별시 송파구 올림픽로 35",
+          roadAddress: "",
+          phone: "",
+          placeUrl: "http://place.map.kakao.com/222",
+        },
+      ],
+    });
+  });
+
+  it("returns a fallback result without a network call when the API key is empty", async () => {
+    vi.stubEnv("KAKAO_API_KEY", "");
+    const fetchMock = stubFetch();
+
+    const result = await searchVendors("웨딩홀");
+
+    expect(result).toEqual({ ok: false });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("returns a fallback result when kakao responds 500 or the network throws", async () => {
+    vi.stubEnv("KAKAO_API_KEY", API_KEY);
+    const httpErrorMock = stubFetch();
+    httpErrorMock.mockResolvedValue(jsonResponse(500, { error: "internal" }));
+
+    await expect(searchVendors("웨딩홀")).resolves.toEqual({ ok: false });
+
+    const networkErrorMock = stubFetch();
+    networkErrorMock.mockRejectedValue(new TypeError("fetch failed"));
+
+    await expect(searchVendors("웨딩홀")).resolves.toEqual({ ok: false });
+  });
+});
