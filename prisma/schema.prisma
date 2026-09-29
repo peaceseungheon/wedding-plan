@@ -22,6 +22,18 @@ enum PROJECT_VENDOR_STATUS {
   CONTRACTED
 }
 
+enum QUOTE_STATUS {
+  DRAFT
+  CONFIRMED
+}
+
+enum PAYMENT_LABEL {
+  DEPOSIT
+  MIDDLE
+  FINAL
+  ETC
+}
+
 model users {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -44,6 +56,9 @@ model wedding_projects {
   user             users               @relation(fields: [userId], references: [id], onDelete: Cascade)
   budgetCategories budget_categories[]
   projectVendors   project_vendors[]
+  contracts        contracts[]
+  tasks            tasks[]
+  documents        documents[]
 }
 
 model budget_categories {
@@ -80,6 +95,107 @@ model project_vendors {
 
   project wedding_projects @relation(fields: [projectId], references: [id], onDelete: Cascade)
   vendor  vendors          @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  quotes  quotes[]
 
   @@unique([projectId, vendorId])
+}
+
+model quotes {
+  id              String       @id @default(cuid())
+  projectVendorId String
+  quoteDate       DateTime
+  guestCount      Int
+  validUntil      DateTime?
+  notes           String?
+  status          QUOTE_STATUS @default(DRAFT)
+  createdAt       DateTime     @default(now())
+
+  projectVendor project_vendors @relation(fields: [projectVendorId], references: [id], onDelete: Cascade)
+  quoteItems    quote_items[]
+  contract      contracts?
+  documents     documents[]
+}
+
+model quote_items {
+  id        String  @id @default(cuid())
+  quoteId   String
+  itemCode  String?
+  rawName   String
+  qty       Int     @default(1)
+  unitPrice Int
+  amount    Int
+  required  Boolean @default(true)
+  selected  Boolean @default(false)
+  sortOrder Int
+
+  quote quotes @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId])
+}
+
+model contracts {
+  id                 String   @id @default(cuid())
+  quoteId            String   @unique
+  projectId          String
+  amountSnapshot     Int
+  vendorNameSnapshot String
+  signedDate         DateTime
+  notes              String?
+
+  // Restrict: contract snapshots are the financial source of truth; a quoted-and-signed
+  // quote must not disappear and silently drop its contract. Delete contract first.
+  quote    quotes           @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  project  wedding_projects @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  payments payments[]
+}
+
+model payments {
+  id         String        @id @default(cuid())
+  contractId String
+  label      PAYMENT_LABEL
+  amount     Int
+  dueDate    DateTime
+  paidAt     DateTime?
+
+  contract contracts @relation(fields: [contractId], references: [id], onDelete: Cascade)
+}
+
+model tasks {
+  id        String    @id @default(cuid())
+  projectId String
+  title     String
+  dueDate   DateTime?
+  done      Boolean   @default(false)
+  sortOrder Int
+
+  project wedding_projects @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model documents {
+  id          String   @id @default(cuid())
+  projectId   String
+  quoteId     String?
+  fileName    String
+  storagePath String
+  mimeType    String
+  sizeBytes   Int
+  uploadedAt  DateTime @default(now())
+
+  project wedding_projects @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // SetNull: the uploaded file record outlives its optional quote link.
+  quote quotes? @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+}
+
+model price_benchmarks {
+  id           String   @id @default(cuid())
+  region       String
+  category     String
+  itemCode     String?
+  avgPrice     Int
+  sampleSize   Int
+  sourcePeriod String
+  sourceType   String   @default("참가격")
+  createdAt    DateTime @default(now())
+
+  @@unique([region, category, itemCode, sourcePeriod])
 }
