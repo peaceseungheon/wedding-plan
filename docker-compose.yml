@@ -1,0 +1,25 @@
+services:
+  mysql:
+    image: mysql:8
+    container_name: wedding-plan-mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: wedding
+      MYSQL_DATABASE: wedding
+    # 호스트 3306은 이 머신의 네이티브 MySQL(/usr/local/mysql)이 점유 중이라 3307로 노출한다.
+    # 컨테이너 내부는 3306 그대로. DATABASE_URL은 127.0.0.1:3307을 본다. (.env.example 참고)
+    ports:
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  mysql-data:
