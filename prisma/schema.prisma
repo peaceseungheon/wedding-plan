@@ -1,5 +1,4 @@
 // Prisma schema: https://pris.ly/d/prisma-schema
-// 초기 모델은 후속 태스크에서 추가한다. (이 파일은 DB 연결 설정만 담는다)
 
 generator client {
   provider = "prisma-client"
@@ -8,4 +7,79 @@ generator client {
 
 datasource db {
   provider = "mysql"
+}
+
+enum VENDOR_CATEGORY {
+  WEDDING_HALL
+  STUDIO
+  DRESS
+  MAKEUP
+  ETC
+}
+
+enum PROJECT_VENDOR_STATUS {
+  CANDIDATE
+  CONTRACTED
+}
+
+model users {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+
+  weddingProjects wedding_projects[]
+}
+
+model wedding_projects {
+  id          String    @id @default(cuid())
+  userId      String
+  title       String
+  weddingDate DateTime?
+  region      String?
+  guestCount  Int?
+  createdAt   DateTime  @default(now())
+
+  user             users               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  budgetCategories budget_categories[]
+  projectVendors   project_vendors[]
+}
+
+model budget_categories {
+  id            String @id @default(cuid())
+  projectId     String
+  name          String
+  plannedAmount Int    @default(0)
+  sortOrder     Int
+
+  project wedding_projects @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, name])
+}
+
+model vendors {
+  id           String          @id @default(cuid())
+  kakaoPlaceId String?         @unique
+  name         String
+  category     VENDOR_CATEGORY
+  address      String?
+  phone        String?
+
+  projectVendors project_vendors[]
+}
+
+model project_vendors {
+  id         String                @id @default(cuid())
+  projectId  String
+  vendorId   String
+  memo       String?
+  isFavorite Boolean               @default(false)
+  status     PROJECT_VENDOR_STATUS @default(CANDIDATE)
+  createdAt  DateTime              @default(now())
+
+  project wedding_projects @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  vendor  vendors          @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+
+  @@unique([projectId, vendorId])
 }
