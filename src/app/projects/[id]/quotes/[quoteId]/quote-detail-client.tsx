@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  BenchmarkDeltaLabel,
+  useBenchmarks,
+} from "@/lib/client/use-benchmarks";
 import { ITEM_CODES, ITEM_CODE_LABELS } from "@/lib/constants/item-codes";
 import { normalizeQuoteItemAmount } from "@/lib/domain/quote-item";
 import { formatKRW, minTotal, perGuest, withOptionsTotal } from "@/lib/domain/totals";
@@ -174,6 +178,7 @@ export default function QuoteDetailClient({
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   // 기본정보 폼을 사용자가 만졌으면 리패치가 폼 값을 덮어쓰지 않는다.
   const infoTouchedRef = useRef(false);
+  const benchmarks = useBenchmarks(projectId);
   const router = useRouter();
 
   const apiRequest = useCallback(
@@ -643,6 +648,9 @@ export default function QuoteDetailClient({
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold text-zinc-900">항목</h2>
+        <p className="text-xs text-zinc-500">
+          소계 아래 &apos;지역 평균 대비&apos;는 같은 지역 참가격 평균과의 차이입니다.
+        </p>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-sm">
             <thead>
@@ -708,7 +716,14 @@ export default function QuoteDetailClient({
                       }
                     />
                   </td>
-                  <td className="whitespace-nowrap py-2 pr-2 tabular-nums">{formatKRW(item.amount)}</td>
+                  <td className="whitespace-nowrap py-2 pr-2 tabular-nums">
+                    {formatKRW(item.amount)}
+                    <BenchmarkDeltaLabel
+                      source={benchmarks}
+                      itemCode={item.itemCode}
+                      amount={item.amount}
+                    />
+                  </td>
                   <td className="py-2 pr-2 text-center">
                     <input
                       type="checkbox"
