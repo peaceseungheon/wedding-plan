@@ -2,6 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import {
+  BenchmarkDeltaLabel,
+  useBenchmarks,
+} from "@/lib/client/use-benchmarks";
 import { formatKRW } from "@/lib/domain/totals";
 
 /** 비교 API 응답의 quotes 요소(총액은 조회 시점 계산값). */
@@ -126,6 +130,7 @@ export default function CompareClient({
 }) {
   const [data, setData] = useState<CompareResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const benchmarks = useBenchmarks(projectId);
   const router = useRouter();
 
   // 상태를 바꾸지 않는 순수 페처 — 이펙트의 .then 콜백에서만 상태를 바꾼다.
@@ -203,6 +208,9 @@ export default function CompareClient({
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold text-zinc-900">항목 비교</h2>
         <p className="text-xs text-zinc-500">항목이 없는 견적은 &apos;없음&apos;으로 표시됩니다.</p>
+        <p className="text-xs text-zinc-500">
+          금액 아래 &apos;지역 평균 대비&apos;는 같은 지역 참가격 평균과의 차이입니다.
+        </p>
         {loading && <p className="text-sm text-zinc-500">비교 항목을 불러오는 중…</p>}
         {data !== null && (
           <div className="overflow-x-auto">
@@ -236,6 +244,11 @@ export default function CompareClient({
                       ) : (
                         <td key={quote.quoteId} className="whitespace-nowrap py-2 pr-2 tabular-nums">
                           {formatKRW(amount)}
+                          <BenchmarkDeltaLabel
+                            source={benchmarks}
+                            itemCode={row.itemCode}
+                            amount={amount}
+                          />
                         </td>
                       );
                     })}
