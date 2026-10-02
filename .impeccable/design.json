@@ -1,0 +1,477 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-02T14:32:02+00:00",
+  "title": "Design System: 우리의 결혼준비",
+  "extensions": {
+    "colorMeta": {
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Ledger Ivory",
+        "canonical": "oklch(97.7% 0.007 80.7)",
+        "tonalRamp": [
+          "oklch(15% 0.007 80.7)",
+          "oklch(26% 0.007 80.7)",
+          "oklch(38% 0.007 80.7)",
+          "oklch(50% 0.007 80.7)",
+          "oklch(62% 0.007 80.7)",
+          "oklch(74% 0.007 80.7)",
+          "oklch(85% 0.007 80.7)",
+          "oklch(95% 0.007 80.7)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Clean Sheet",
+        "canonical": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "oklch(15% 0.000 89.9)",
+          "oklch(26% 0.000 89.9)",
+          "oklch(38% 0.000 89.9)",
+          "oklch(50% 0.000 89.9)",
+          "oklch(62% 0.000 89.9)",
+          "oklch(74% 0.000 89.9)",
+          "oklch(85% 0.000 89.9)",
+          "oklch(95% 0.000 89.9)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Ruled Line",
+        "canonical": "oklch(92.7% 0.014 78.3)",
+        "tonalRamp": [
+          "oklch(15% 0.014 78.3)",
+          "oklch(26% 0.014 78.3)",
+          "oklch(38% 0.014 78.3)",
+          "oklch(50% 0.014 78.3)",
+          "oklch(62% 0.014 78.3)",
+          "oklch(74% 0.014 78.3)",
+          "oklch(85% 0.014 78.3)",
+          "oklch(95% 0.014 78.3)"
+        ]
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Total Rule",
+        "canonical": "oklch(86.1% 0.020 77.3)",
+        "tonalRamp": [
+          "oklch(15% 0.020 77.3)",
+          "oklch(26% 0.020 77.3)",
+          "oklch(38% 0.020 77.3)",
+          "oklch(50% 0.020 77.3)",
+          "oklch(62% 0.020 77.3)",
+          "oklch(74% 0.020 77.3)",
+          "oklch(85% 0.020 77.3)",
+          "oklch(95% 0.020 77.3)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Walnut Ink",
+        "canonical": "oklch(26.6% 0.012 55.8)",
+        "tonalRamp": [
+          "oklch(15% 0.012 55.8)",
+          "oklch(26% 0.012 55.8)",
+          "oklch(38% 0.012 55.8)",
+          "oklch(50% 0.012 55.8)",
+          "oklch(62% 0.012 55.8)",
+          "oklch(74% 0.012 55.8)",
+          "oklch(85% 0.012 55.8)",
+          "oklch(95% 0.012 55.8)"
+        ]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Faded Walnut",
+        "canonical": "oklch(50.2% 0.017 64.1)",
+        "tonalRamp": [
+          "oklch(15% 0.017 64.1)",
+          "oklch(26% 0.017 64.1)",
+          "oklch(38% 0.017 64.1)",
+          "oklch(50% 0.017 64.1)",
+          "oklch(62% 0.017 64.1)",
+          "oklch(74% 0.017 64.1)",
+          "oklch(85% 0.017 64.1)",
+          "oklch(95% 0.017 64.1)"
+        ]
+      },
+      "ink-subtle": {
+        "role": "neutral",
+        "displayName": "Pencil Note",
+        "canonical": "oklch(55.0% 0.015 63.7)",
+        "tonalRamp": [
+          "oklch(15% 0.015 63.7)",
+          "oklch(26% 0.015 63.7)",
+          "oklch(38% 0.015 63.7)",
+          "oklch(50% 0.015 63.7)",
+          "oklch(62% 0.015 63.7)",
+          "oklch(74% 0.015 63.7)",
+          "oklch(85% 0.015 63.7)",
+          "oklch(95% 0.015 63.7)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Deep Garden Sage",
+        "canonical": "oklch(49.9% 0.046 155.7)",
+        "tonalRamp": [
+          "oklch(15% 0.046 155.7)",
+          "oklch(26% 0.046 155.7)",
+          "oklch(38% 0.046 155.7)",
+          "oklch(50% 0.046 155.7)",
+          "oklch(62% 0.046 155.7)",
+          "oklch(74% 0.046 155.7)",
+          "oklch(85% 0.046 155.7)",
+          "oklch(95% 0.046 155.7)"
+        ]
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "Sage Wash",
+        "canonical": "oklch(94.1% 0.012 153.7)",
+        "tonalRamp": [
+          "oklch(15% 0.012 153.7)",
+          "oklch(26% 0.012 153.7)",
+          "oklch(38% 0.012 153.7)",
+          "oklch(50% 0.012 153.7)",
+          "oklch(62% 0.012 153.7)",
+          "oklch(74% 0.012 153.7)",
+          "oklch(85% 0.012 153.7)",
+          "oklch(95% 0.012 153.7)"
+        ]
+      },
+      "positive": {
+        "role": "secondary",
+        "displayName": "Ledger Blue",
+        "canonical": "oklch(52.8% 0.103 251.9)",
+        "tonalRamp": [
+          "oklch(15% 0.103 251.9)",
+          "oklch(26% 0.103 251.9)",
+          "oklch(38% 0.103 251.9)",
+          "oklch(50% 0.103 251.9)",
+          "oklch(62% 0.103 251.9)",
+          "oklch(74% 0.103 251.9)",
+          "oklch(85% 0.103 251.9)",
+          "oklch(95% 0.103 251.9)"
+        ]
+      },
+      "positive-soft": {
+        "role": "secondary",
+        "displayName": "Ledger Blue Wash",
+        "canonical": "oklch(94.6% 0.015 251.2)",
+        "tonalRamp": [
+          "oklch(15% 0.015 251.2)",
+          "oklch(26% 0.015 251.2)",
+          "oklch(38% 0.015 251.2)",
+          "oklch(50% 0.015 251.2)",
+          "oklch(62% 0.015 251.2)",
+          "oklch(74% 0.015 251.2)",
+          "oklch(85% 0.015 251.2)",
+          "oklch(95% 0.015 251.2)"
+        ]
+      },
+      "caution": {
+        "role": "secondary",
+        "displayName": "Amber Seal",
+        "canonical": "oklch(54.4% 0.111 70.6)",
+        "tonalRamp": [
+          "oklch(15% 0.111 70.6)",
+          "oklch(26% 0.111 70.6)",
+          "oklch(38% 0.111 70.6)",
+          "oklch(50% 0.111 70.6)",
+          "oklch(62% 0.111 70.6)",
+          "oklch(74% 0.111 70.6)",
+          "oklch(85% 0.111 70.6)",
+          "oklch(95% 0.111 70.6)"
+        ]
+      },
+      "caution-soft": {
+        "role": "secondary",
+        "displayName": "Amber Seal Wash",
+        "canonical": "oklch(95.8% 0.029 82.6)",
+        "tonalRamp": [
+          "oklch(15% 0.029 82.6)",
+          "oklch(26% 0.029 82.6)",
+          "oklch(38% 0.029 82.6)",
+          "oklch(50% 0.029 82.6)",
+          "oklch(62% 0.029 82.6)",
+          "oklch(74% 0.029 82.6)",
+          "oklch(85% 0.029 82.6)",
+          "oklch(95% 0.029 82.6)"
+        ]
+      },
+      "negative": {
+        "role": "secondary",
+        "displayName": "Brick Red",
+        "canonical": "oklch(53.0% 0.153 31.1)",
+        "tonalRamp": [
+          "oklch(15% 0.153 31.1)",
+          "oklch(26% 0.153 31.1)",
+          "oklch(38% 0.153 31.1)",
+          "oklch(50% 0.153 31.1)",
+          "oklch(62% 0.153 31.1)",
+          "oklch(74% 0.153 31.1)",
+          "oklch(85% 0.153 31.1)",
+          "oklch(95% 0.153 31.1)"
+        ]
+      },
+      "negative-soft": {
+        "role": "secondary",
+        "displayName": "Brick Red Wash",
+        "canonical": "oklch(93.5% 0.024 30.5)",
+        "tonalRamp": [
+          "oklch(15% 0.024 30.5)",
+          "oklch(26% 0.024 30.5)",
+          "oklch(38% 0.024 30.5)",
+          "oklch(50% 0.024 30.5)",
+          "oklch(62% 0.024 30.5)",
+          "oklch(74% 0.024 30.5)",
+          "oklch(85% 0.024 30.5)",
+          "oklch(95% 0.024 30.5)"
+        ]
+      },
+      "info": {
+        "role": "secondary",
+        "displayName": "Dusk Violet",
+        "canonical": "oklch(51.0% 0.075 296.4)",
+        "tonalRamp": [
+          "oklch(15% 0.075 296.4)",
+          "oklch(26% 0.075 296.4)",
+          "oklch(38% 0.075 296.4)",
+          "oklch(50% 0.075 296.4)",
+          "oklch(62% 0.075 296.4)",
+          "oklch(74% 0.075 296.4)",
+          "oklch(85% 0.075 296.4)",
+          "oklch(95% 0.075 296.4)"
+        ]
+      },
+      "info-soft": {
+        "role": "secondary",
+        "displayName": "Dusk Violet Wash",
+        "canonical": "oklch(94.5% 0.012 301.3)",
+        "tonalRamp": [
+          "oklch(15% 0.012 301.3)",
+          "oklch(26% 0.012 301.3)",
+          "oklch(38% 0.012 301.3)",
+          "oklch(50% 0.012 301.3)",
+          "oklch(62% 0.012 301.3)",
+          "oklch(74% 0.012 301.3)",
+          "oklch(85% 0.012 301.3)",
+          "oklch(95% 0.012 301.3)"
+        ]
+      },
+      "neutral-soft": {
+        "role": "neutral",
+        "displayName": "Linen",
+        "canonical": "oklch(94.5% 0.011 76.6)",
+        "tonalRamp": [
+          "oklch(15% 0.011 76.6)",
+          "oklch(26% 0.011 76.6)",
+          "oklch(38% 0.011 76.6)",
+          "oklch(50% 0.011 76.6)",
+          "oklch(62% 0.011 76.6)",
+          "oklch(74% 0.011 76.6)",
+          "oklch(85% 0.011 76.6)",
+          "oklch(95% 0.011 76.6)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "D-Day 전용."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "페이지 제목."
+      },
+      "stat": {
+        "displayName": "Stat",
+        "purpose": "요약 카드의 금액."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "카드 제목."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "본문 기본."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "표, 목록, 폼 라벨, 메타."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "배지, 범례, 힌트."
+      }
+    },
+    "shadows": [
+      {
+        "name": "sheet-lift",
+        "value": "0 1px 2px rgb(42 36 32 / 0.04)",
+        "purpose": "모든 카드. 다른 요소에는 쓰지 않는다."
+      }
+    ],
+    "motion": [
+      {
+        "name": "color-transition",
+        "value": "150ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "버튼 hover의 색 전환. 크기나 위치는 움직이지 않는다."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "화면당 하나뿐인 주요 액션.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">저장</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 16px;border-radius:8px;font-family:'Pretendard Variable',system-ui,sans-serif;font-size:14px;font-weight:600;border:1px solid transparent;cursor:pointer;transition:background-color .15s,color .15s}.ds-btn:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}.ds-btn-primary{background:var(--color-accent);color:#fff}.ds-btn-primary:hover{background:color-mix(in srgb,var(--color-accent) 90%,transparent)}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "보조 액션과 버튼 모양 링크.",
+      "html": "<button class=\"ds-btn ds-btn-secondary\">견적 선택하러 가기</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 16px;border-radius:8px;font-family:'Pretendard Variable',system-ui,sans-serif;font-size:14px;font-weight:600;border:1px solid transparent;cursor:pointer;transition:background-color .15s,color .15s}.ds-btn:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}.ds-btn-secondary{background:var(--color-surface);color:var(--color-ink);border-color:var(--color-line-strong)}.ds-btn-secondary:hover{background:var(--color-canvas)}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "눈에 띄지 않아야 하는 3순위 액션.",
+      "html": "<button class=\"ds-btn ds-btn-ghost\">취소</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 16px;border-radius:8px;font-family:'Pretendard Variable',system-ui,sans-serif;font-size:14px;font-weight:600;border:1px solid transparent;cursor:pointer;transition:background-color .15s,color .15s}.ds-btn:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}.ds-btn-ghost{background:transparent;color:var(--color-ink-muted)}.ds-btn-ghost:hover{background:var(--color-neutral-soft);color:var(--color-ink)}"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "삭제처럼 되돌릴 수 없는 액션.",
+      "html": "<button class=\"ds-btn ds-btn-danger\">삭제</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 16px;border-radius:8px;font-family:'Pretendard Variable',system-ui,sans-serif;font-size:14px;font-weight:600;border:1px solid transparent;cursor:pointer;transition:background-color .15s,color .15s}.ds-btn:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}.ds-btn-danger{background:var(--color-negative);color:#fff}.ds-btn-danger:hover{background:color-mix(in srgb,var(--color-negative) 90%,transparent)}"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "라벨이 감싸는 입력창과 힌트.",
+      "html": "<label class=\"ds-field\">하객 인원<input class=\"ds-input\" placeholder=\"250\"><span class=\"ds-hint\">비우면 미정</span></label>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:6px;font:500 14px 'Pretendard Variable',system-ui,sans-serif;color:var(--color-ink)}.ds-input{height:40px;padding:0 12px;border:1px solid var(--color-line-strong);border-radius:8px;background:var(--color-surface);color:var(--color-ink);font-size:14px;font-weight:400}.ds-input::placeholder{color:var(--color-ink-subtle)}.ds-input:focus{outline:none;border-color:var(--color-accent);box-shadow:0 0 0 2px var(--color-accent-soft)}.ds-hint{font-size:12px;font-weight:400;color:var(--color-ink-subtle)}"
+    },
+    {
+      "name": "Project Tabs",
+      "kind": "nav",
+      "refersTo": "nav-tab",
+      "description": "상단 바의 프로젝트 탭. 현재 위치만 세이지.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-tab ds-tab-active\" aria-current=\"page\">대시보드</a><a class=\"ds-tab\">예산</a><a class=\"ds-tab\">업체</a><a class=\"ds-tab\">할 일</a><a class=\"ds-tab\">문서</a></nav>",
+      "css": ".ds-nav{display:flex;gap:4px}.ds-tab{padding:6px 12px;border-radius:8px;font:400 14px 'Pretendard Variable',system-ui,sans-serif;color:var(--color-ink-muted);text-decoration:none;cursor:pointer}.ds-tab:hover{color:var(--color-ink)}.ds-tab-active{background:var(--color-accent-soft);color:var(--color-accent);font-weight:600}"
+    },
+    {
+      "name": "Status Badges",
+      "kind": "chip",
+      "refersTo": "badge-positive",
+      "description": "색과 기호를 함께 쓰는 상태 배지.",
+      "html": "<span class=\"ds-badge ds-pos\">✓ 남은 예산 970만원</span> <span class=\"ds-badge ds-cau\">! 예산의 98%</span> <span class=\"ds-badge ds-neg\">▲ 120만원 초과</span> <span class=\"ds-badge ds-neu\">미정</span>",
+      "css": ".ds-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;font:600 12px 'Pretendard Variable',system-ui,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}.ds-pos{background:var(--color-positive-soft);color:var(--color-positive)}.ds-cau{background:var(--color-caution-soft);color:var(--color-caution)}.ds-neg{background:var(--color-negative-soft);color:var(--color-negative)}.ds-neu{background:var(--color-neutral-soft);color:var(--color-ink-muted)}"
+    },
+    {
+      "name": "Stat Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "화면의 핵심 숫자를 담는 요약 카드.",
+      "html": "<div class=\"ds-card\"><p class=\"ds-stat-label\">계약 총액</p><p class=\"ds-stat-value\">2,130만원</p><span class=\"ds-badge ds-pos\">✓ 남은 예산 970만원</span><div class=\"ds-track\"><div class=\"ds-fill\" style=\"width:69%\"></div></div></div>",
+      "css": ".ds-card{padding:20px;border:1px solid var(--color-line);border-radius:12px;background:var(--color-surface);box-shadow:0 1px 2px rgb(42 36 32 / 0.04);font-family:'Pretendard Variable',system-ui,sans-serif;color:var(--color-ink)}.ds-stat-label{margin:0;font-size:13px;color:var(--color-ink-muted)}.ds-stat-value{margin:4px 0 8px;font-size:26px;font-weight:700;letter-spacing:-0.025em;font-variant-numeric:tabular-nums}.ds-badge{display:inline-flex;padding:2px 8px;border-radius:9999px;font-size:12px;font-weight:600}.ds-pos{background:var(--color-positive-soft);color:var(--color-positive)}.ds-track{margin-top:12px;height:8px;border-radius:9999px;background:var(--color-line);overflow:hidden}.ds-fill{height:100%;border-radius:9999px;background:var(--color-positive)}"
+    },
+    {
+      "name": "D-Day",
+      "kind": "custom",
+      "refersTo": "display",
+      "description": "세리프 세 자리 중 하나. 예식까지 남은 날.",
+      "html": "<div class=\"ds-dday\"><p class=\"ds-dday-label\">예식까지</p><p class=\"ds-dday-value\">D-197</p></div>",
+      "css": ".ds-dday-label{margin:0;font:400 12px 'Pretendard Variable',system-ui,sans-serif;color:var(--color-ink-subtle)}.ds-dday-value{margin:0;font-family:'Noto Serif KR',serif;font-size:44px;font-weight:600;line-height:1;color:var(--color-accent);font-variant-numeric:tabular-nums}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Wedding Ledger (웨딩 장부)",
+    "overview": "이 시스템은 잘 정리된 장부다. 아이보리 종이 위에 견적 금액, 합계, 결제 회차가 가지런히 정렬되어 있고, 읽는 사람은 장식이 아니라 숫자를 믿는다. 화면의 주인공은 항상 결정 근거가 되는 숫자 하나다. 대시보드에서는 D-Day와 예산 요약, 견적 비교에서는 옵션 포함 총액이 그 숫자다.\n\n웨딩의 감성은 장부의 표지에만 남는다. 아이보리 바탕, 세리프 제목과 D-Day, 그리고 Deep Garden Sage 포인트 컬러 하나다. 본문과 표는 Pretendard로 단정하게 짜고, 금액은 모두 고정폭 숫자로 세로 정렬한다. 구분은 그림자보다 괘선(테두리)과 바탕색 차이로 한다.\n\n밀도는 중간이다. 데스크톱에서 견적표를 펼쳐 비교하는 장면이 기준이고, 같은 화면이 360px 모바일에서도 깨지지 않는다. 라이트 테마 전용이며, 다크 테마는 토큰 구조만 열어 두었다.",
+    "keyCharacteristics": [
+      "아이보리 바탕 위 흰 카드, 얇은 괘선으로 구획",
+      "세리프는 페이지 제목, D-Day, 브랜드 세 자리에만",
+      "포인트 컬러는 주요 액션 하나와 현재 위치 표시에만",
+      "상태는 색과 기호(✓ ! ▲) 또는 텍스트를 함께 써서 전달",
+      "모든 금액과 날짜는 고정폭 숫자(tabular-nums)"
+    ],
+    "rules": [
+      {
+        "name": "The One Sage Rule",
+        "body": "포인트 컬러는 주요 액션 하나와 현재 위치 표시에만 쓴다. 강조가 필요하면 굵기와 크기로 해결한다.",
+        "section": "colors"
+      },
+      {
+        "name": "The Color-Plus-Sign Rule",
+        "body": "상태색은 절대 혼자 오지 않는다. 배지에는 기호(✓ ! ▲)나 문구를 넣고, 글자색 강조(최저가의 파란 굵은 금액)에는 범례를 단다.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Raw Palette Rule",
+        "body": "화면 코드는 Tailwind 기본 팔레트(`zinc-*`, `red-*` 등)를 쓰지 않는다. 위 토큰만 쓴다.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three Serif Seats Rule",
+        "body": "세리프는 페이지 제목, D-Day, 브랜드 세 자리에만 앉는다. 카드 제목이나 숫자에는 쓰지 않는다.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Money Rule",
+        "body": "금액과 날짜는 모두 고정폭 숫자로 쓴다. 표와 목록은 원 단위 정확 표기(`12,400,000원`), 요약 숫자만 만원 단위다.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Eyebrow Rule",
+        "body": "제목 위에 작은 보조 라벨을 두지 않는다. 제목이 스스로 위계를 갖고, 보조 정보는 제목 아래 메타 줄에 둔다.",
+        "section": "typography"
+      },
+      {
+        "name": "The 360 Rule",
+        "body": "360px 폭에서 페이지 가로 넘침이 없어야 한다. 넘치는 것은 표와 탭뿐이고, 둘 다 자기 래퍼 안에서 스크롤한다.",
+        "section": "layout"
+      },
+      {
+        "name": "The Ruled Not Raised Rule",
+        "body": "구획이 필요하면 그림자를 키우지 말고 괘선(`line`, `line-strong`)이나 바탕색으로 나눈다.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do 화면마다 결정 근거가 되는 숫자 하나를 첫 화면 위쪽에 Stat 크기(26px 700)로 둔다.",
+      "Do 상태색에는 항상 기호(✓ ! ▲)나 문구를 함께 쓴다.",
+      "Do 상태 톤 판정은 `src/lib/domain/tone.ts`의 함수와 임계값(90%, +20%)만 쓴다.",
+      "Do 금액과 날짜는 고정폭 숫자로 쓰고, 요약은 `formatManwon`, 표·목록은 `formatKRW`로 표기한다.",
+      "Do 구획은 괘선(Ruled Line 1px, 합계는 Total Rule)과 바탕색으로 나눈다.",
+      "Do 새 화면은 360px와 1280px에서 함께 확인한다."
+    ],
+    "donts": [
+      "Don't Tailwind 기본 팔레트(`zinc-*`, `red-*`, `blue-*`, `green-*`, `amber-*`)를 화면 코드에 쓰지 않는다.",
+      "Don't 세리프를 페이지 제목, D-Day, 브랜드 밖에서 쓰지 않는다.",
+      "Don't 포인트 컬러를 장식, 아이콘, 일반 링크, 상태 표시에 쓰지 않는다. \"양호\"는 Ledger Blue다.",
+      "Don't 제목 위에 작은 보조 라벨(eyebrow)을 두지 않는다.",
+      "Don't 카드 그림자를 키우거나 카드 안에 카드를 겹치지 않는다.",
+      "Don't 한쪽에만 두꺼운 색 테두리를 두는 강조 카드나 알림을 만들지 않는다.",
+      "Don't 다크 테마 값을 화면에서 임의로 정의하지 않는다. 필요해지면 토큰을 재정의한다."
+    ]
+  }
+}

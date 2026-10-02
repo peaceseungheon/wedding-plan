@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 
-/** 상단 바. 서비스명은 브랜드 작업 전까지 임시 문구다(docs/design-system.md 8). */
+/** 상단 바. 서비스명은 브랜드 작업 전까지 임시 문구다(DESIGN.md Rollout). */
 export function AppShell({ nav, children }: { nav?: ReactNode; children: ReactNode }) {
   return (
     <>

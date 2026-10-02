@@ -1,5 +1,5 @@
 /**
- * 화면 상태 톤 판정 순수 도메인. 임계값은 docs/design-system.md 5.1이 출처이며
+ * 화면 상태 톤 판정 순수 도메인. 임계값은 DESIGN.md Status Tone Mapping이 출처이며
  * 화면에서 하드코딩하지 않고 이 모듈만 쓴다.
  */
 
