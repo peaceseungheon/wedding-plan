@@ -199,3 +199,51 @@ model price_benchmarks {
 
   @@unique([region, category, itemCode, sourcePeriod])
 }
+
+// 한국소비자원 참가격 포털 '중요정보 공개(예식장)' 게시물 단위 공개 자료.
+// boardSeq = 게시물 식별자(재수집 멱등 키), xlsx 원문은 파싱해 자식 테이블로 정규화해 보관한다.
+model wedding_hall_disclosures {
+  id          String    @id @default(cuid())
+  boardSeq    Int       @unique
+  region      String
+  venueName   String    @db.Text
+  address     String?   @db.Text
+  phone       String?
+  fileRgtnSeq Int?
+  fileName    String?   @db.Text
+  disclosedAt DateTime?
+  scrapedAt   DateTime  @default(now())
+
+  priceItems     wedding_hall_price_items[]
+  refundPolicies wedding_hall_refund_policies[]
+
+  @@index([region])
+}
+
+model wedding_hall_price_items {
+  id           String  @id @default(cuid())
+  disclosureId String
+  hallName     String  @db.Text
+  itemGroup    String? @db.Text
+  itemName     String  @db.Text
+  rawValue     String? @db.Text
+  priceMin     Int?
+  priceMax     Int?
+  sortOrder    Int
+
+  disclosure wedding_hall_disclosures @relation(fields: [disclosureId], references: [id], onDelete: Cascade)
+
+  @@index([disclosureId])
+}
+
+model wedding_hall_refund_policies {
+  id           String @id @default(cuid())
+  disclosureId String
+  periodText   String @db.Text
+  ruleText     String @db.Text
+  sortOrder    Int
+
+  disclosure wedding_hall_disclosures @relation(fields: [disclosureId], references: [id], onDelete: Cascade)
+
+  @@index([disclosureId])
+}

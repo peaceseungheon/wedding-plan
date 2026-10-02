@@ -10,15 +10,18 @@
     "test": "vitest run",
     "db:up": "docker compose up -d",
     "db:migrate": "prisma migrate dev",
-    "import:benchmarks": "tsx scripts/import-benchmarks.ts"
+    "import:benchmarks": "tsx scripts/import-benchmarks.ts",
+    "scrape:wedding-halls": "tsx scripts/scrape-wedding-halls.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.10.0",
     "bcryptjs": "^3.0.3",
+    "exceljs": "^4.4.0",
     "next": "16.3.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "tsx": "^4.23.15"
+    "tsx": "^4.23.15",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@prisma/client": "^7.10.0",

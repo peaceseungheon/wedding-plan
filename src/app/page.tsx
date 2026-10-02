@@ -134,7 +134,12 @@ export default function HomePage() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8">
-      <h1 className="text-2xl font-semibold">내 결혼준비 프로젝트</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-semibold">내 결혼준비 프로젝트</h1>
+        <Link href="/wedding-halls" className="text-sm text-zinc-600 underline-offset-4 hover:underline">
+          예식장 공개자료 조회 →
+        </Link>
+      </div>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">새 프로젝트 만들기</h2>
