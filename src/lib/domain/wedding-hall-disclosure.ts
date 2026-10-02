@@ -212,14 +212,38 @@ export async function parseWeddingHallDisclosure(
     }
   }
 
-  const findMarkerRow = (marker: string): number => {
-    for (let row = 1; row <= rowCount; row += 1) {
-      if (grid[row]?.some((cell) => cell.includes(marker))) return row;
+  const findMarkerRow = (matches: (cell: string) => boolean, startRow = 1): number => {
+    for (let row = startRow; row <= rowCount; row += 1) {
+      if (grid[row]?.some(matches)) return row;
     }
-    throw new Error(`섹션 마커(${marker})를 찾을 수 없어 예식장 공개 자료를 해석할 수 없습니다.`);
+    throw new Error("섹션 마커(①)를 찾을 수 없어 예식장 공개 자료를 해석할 수 없습니다.");
   };
-  const priceSectionRow = findMarkerRow("①");
-  const policySectionRow = findMarkerRow("②");
+  // 표준 파일은 ①/② 마커, 일부 변형은 '1. 가격'/'2. 계약해지' 숫자 마커를 쓴다(옐로라인가든).
+  const priceSectionRow = findMarkerRow((cell) => cell.includes("①") || /^1[.)]\s*가격/.test(cell));
+  const policySectionRow = findMarkerRow(
+    (cell) => cell.includes("②") || /^2[.)]\s*계약해지/.test(cell),
+    priceSectionRow + 1,
+  );
+
+  // 변형 B(아르베·옐로라인가든류): 예식홀명 헤더가 2그룹 이상이거나 성수기/비수기
+  // 이중 가격 열이 있으면 다중 서브테이블 전용 파서로 넘긴다.
+  let headerGroupCount = 0;
+  let inHeaderRun = false;
+  let hasSeasonCell = false;
+  for (let row = priceSectionRow + 1; row < policySectionRow; row += 1) {
+    const cells = grid[row] ?? [];
+    const isHallHeader = cells.some((cell) => cell === "예식홀명");
+    if (isHallHeader && !inHeaderRun) {
+      headerGroupCount += 1;
+      inHeaderRun = true;
+    } else if (!isHallHeader) {
+      inHeaderRun = false;
+    }
+    if (!hasSeasonCell && cells.some((cell) => cell.includes("성수기"))) hasSeasonCell = true;
+  }
+  if (headerGroupCount >= 2 || hasSeasonCell) {
+    return parseVariantB({ grid, rowCount, colCount, priceSectionRow, policySectionRow });
+  }
 
   // 헤더 행: ① 다음부터 이어지는, '예식홀명' 셀을 포함한 행들. 첫 행=상단, 마지막 행=리프.
   // 표준 레이아웃은 1열에 '예식홀명'이 오지만, '통합' 레이아웃은 앞에 예식장 열이 하나 더 있어
@@ -364,7 +388,25 @@ export async function parseWeddingHallDisclosure(
     }
   }
 
-  // 위약금 정책: ② 아래 행들. 병합 전파로 같은 내용이 반복되면 첫 행만 본다.
+  // 위약금 정책과 업체명 추출은 표준·변형 B 양쪽이 같은 규칙을 공유한다.
+  const refundPolicies = extractRefundPolicies(grid, policySectionRow, rowCount, colCount);
+  const venueName = extractVenueName(grid, rowCount, colCount);
+
+  return {
+    venueName,
+    halls: blocks.map((block) => block.hall),
+    priceItems,
+    refundPolicies,
+  };
+}
+
+/** ② 섹션 아래 위약금 정책을 수집한다. 'ㅁ 결혼준비대행업' 같은 별개 업종 섹션이 나오면 멈춘다. */
+function extractRefundPolicies(
+  grid: string[][],
+  policySectionRow: number,
+  rowCount: number,
+  colCount: number,
+): WeddingHallRefundPolicy[] {
   const refundPolicies: WeddingHallRefundPolicy[] = [];
   const seenRowSignatures = new Set<string>();
   for (let row = policySectionRow + 1; row <= rowCount; row += 1) {
@@ -378,7 +420,7 @@ export async function parseWeddingHallDisclosure(
     if (seenRowSignatures.has(signature)) continue;
     seenRowSignatures.add(signature);
 
-    // 각주('*')·주석('※')로 시작하는 행은 정책이 아니다.
+    if (values[0]!.startsWith("ㅁ") || values.some((cell) => cell.includes("사업자명"))) break;
     if (values[0]!.startsWith("※") || values[0]!.startsWith("*")) continue;
 
     if (values.length >= 2) {
@@ -400,8 +442,11 @@ export async function parseWeddingHallDisclosure(
       refundPolicies.push({ periodText, ruleText, sortOrder: refundPolicies.length });
     }
   }
+  return refundPolicies;
+}
 
-  // 업체명: 첫 행에서 마커가 아닌 첫 비어있지 않은 셀(표준=1열, 통합=2열). 아이콘·기호 접두어를 뗀다.
+/** 업체명: 첫 행에서 마커가 아닌 첫 비어있지 않은 셀(표준=1열, 통합=2열). 아이콘·기호 접두어를 뗀다. */
+function extractVenueName(grid: string[][], rowCount: number, colCount: number): string {
   let venueName = "";
   for (let row = 1; row <= Math.min(3, rowCount) && venueName === ""; row += 1) {
     for (let col = 1; col <= colCount; col += 1) {
@@ -411,11 +456,152 @@ export async function parseWeddingHallDisclosure(
       break;
     }
   }
+  return venueName;
+}
+
+/**
+ * 변형 B(아르베·옐로라인가든류) 해석: 가격 섹션이 여러 서브테이블(기본·주요선택품목)과
+ * 시즌 라벨('*2027년 1월~8월 기준')로 반복되고, 값 열이 성수기/비수기로 이중화된 형식.
+ * 시즌 라벨은 itemGroup 접미(기준: ...)로, 성수기/비수기는 itemName 접미로 구분해 보존한다.
+ */
+function parseVariantB(context: {
+  readonly grid: string[][];
+  readonly rowCount: number;
+  readonly colCount: number;
+  readonly priceSectionRow: number;
+  readonly policySectionRow: number;
+}): WeddingHallDisclosure {
+  const { grid, rowCount, colCount, priceSectionRow, policySectionRow } = context;
+
+  const halls: string[] = [];
+  const priceItems: WeddingHallPriceItem[] = [];
+  let topHeader: string[] = [];
+  let leafHeader: string[] = [];
+  let hallCol = 1;
+  let seasonLabel = "";
+  let currentHall = "";
+  const lastValueByCol = new Map<number, string>();
+  let headerRun: string[][] = [];
+
+  const baseName = (text: string): string => text.replace(/\s*\(.*\)\s*$/, "").trim();
+
+  for (let row = priceSectionRow + 1; row < policySectionRow; row += 1) {
+    const cells = grid[row] ?? [];
+    const hallCell = cells[hallCol] ?? "";
+
+    if (cells.includes("예식홀명")) {
+      headerRun.push(cells);
+      continue;
+    }
+    if (headerRun.length > 0) {
+      topHeader = headerRun[0] ?? [];
+      leafHeader = headerRun[headerRun.length - 1] ?? [];
+      const headerHallCol = leafHeader.findIndex((cell) => cell === "예식홀명");
+      if (headerHallCol > 0) hallCol = headerHallCol;
+      headerRun = [];
+    }
+    if (hallCell.startsWith("*")) {
+      const matched = /\*([^*]+?)\s*기준/.exec(hallCell);
+      if (matched?.[1]) seasonLabel = matched[1].trim();
+      continue;
+    }
+    if (hallCell.startsWith("※")) continue;
+    if (cells.every((cell) => cell === "")) continue;
+    if (hallCell !== "") {
+      currentHall = hallCell;
+      if (!halls.includes(currentHall)) halls.push(currentHall);
+    }
+    if (currentHall === "") continue;
+
+    for (let col = hallCol + 1; col <= colCount; col += 1) {
+      const value = cells[col] ?? "";
+      if (value === "") continue;
+      if (
+        col - 1 > hallCol &&
+        cells[col - 1] === value &&
+        (leafHeader[col] ?? "") === (leafHeader[col - 1] ?? "") &&
+        (topHeader[col] ?? "") === (topHeader[col - 1] ?? "")
+      ) {
+        continue;
+      }
+      if (lastValueByCol.get(col) === value) continue;
+      lastValueByCol.set(col, value);
+
+      const top = topHeader[col] ?? "";
+      const leaf = leafHeader[col] ?? "";
+      if (leaf === "구분") continue;
+      const season = leaf.includes("성수기") ? "성수기" : leaf.includes("비수기") ? "비수기" : "";
+      if (season !== "") {
+        // 라벨은 왼쪽 인접 열(구분)에서 가져오고, 없으면 상단 헤더명(부페가격).
+        let labelCol = col - 1;
+        while (labelCol > hallCol && (leafHeader[labelCol] ?? "").includes("수기")) labelCol -= 1;
+        const labelLeaf = leafHeader[labelCol] ?? "";
+        const label =
+          labelLeaf !== "" && (topHeader[labelCol] ?? "") === top ? cells[labelCol] ?? "" : baseName(top);
+        const groupSuffix = seasonLabel === "" ? "" : ` (기준: ${seasonLabel})`;
+        const segments = extractSegments(value.replace(/\n/g, " "));
+        priceItems.push({
+          hallName: currentHall,
+          itemGroup: `${top}${groupSuffix}`,
+          itemName: `${label} (${season})`,
+          rawValue: value,
+          priceMin: segments[0]?.min ?? null,
+          priceMax: segments[0]?.max ?? null,
+          sortOrder: priceItems.length,
+        });
+        continue;
+      }
+
+      const headerName = leaf || top;
+      if (headerName === "") continue;
+      const segments = extractSegments(value.replace(/\n/g, " "));
+      if (segments.length === 0) {
+        for (const rawLine of value.split(/\r?\n/)) {
+          const line = stripEdges(rawLine);
+          if (line === "" || isBlankValue(line)) continue;
+          priceItems.push({
+            hallName: currentHall,
+            itemGroup: headerName,
+            itemName: line,
+            rawValue: line,
+            priceMin: null,
+            priceMax: null,
+            sortOrder: priceItems.length,
+          });
+        }
+        continue;
+      }
+      const singleUnnamed = segments.length === 1 && segments[0].name === "";
+      if (singleUnnamed) {
+        priceItems.push({
+          hallName: currentHall,
+          itemGroup: null,
+          itemName: headerName,
+          rawValue: value,
+          priceMin: segments[0].min,
+          priceMax: segments[0].max,
+          sortOrder: priceItems.length,
+        });
+        continue;
+      }
+      for (const segment of segments) {
+        priceItems.push({
+          hallName: currentHall,
+          itemGroup: headerName,
+          itemName: segment.name || headerName,
+          rawValue: value,
+          priceMin: segment.min,
+          priceMax: segment.max,
+          sortOrder: priceItems.length,
+        });
+      }
+    }
+  }
 
   return {
-    venueName,
-    halls: blocks.map((block) => block.hall),
+    venueName: extractVenueName(grid, rowCount, colCount),
+    halls,
     priceItems,
-    refundPolicies,
+    refundPolicies: extractRefundPolicies(grid, policySectionRow, rowCount, colCount),
   };
 }

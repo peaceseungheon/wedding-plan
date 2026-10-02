@@ -321,6 +321,117 @@ describe("parseWeddingHallDisclosure 캠퍼트리 (구형 .xls·단위 승수)",
   });
 });
 
+describe("parseWeddingHallDisclosure 아르베 (변형 B)", () => {
+  /** 아르베 웨딩홀: 다중 서브테이블 + 성수기/비수기 이중 가격 + 시즌별 표 중복 형식. */
+  const disclosure = async () => parseWeddingHallDisclosure(loadFixture("arbe.xlsx"));
+
+  it("업체명과 홀을 읽는다", async () => {
+    const d = await disclosure();
+    expect(d.venueName).toBe("아르베 웨딩홀");
+    expect(d.halls).toEqual(["라피네홀"]);
+  });
+
+  it("시즌1 성수기/비수기 가격을 구분해 읽는다", async () => {
+    const { priceItems } = await disclosure();
+    expect(
+      findOne(priceItems, "라피네홀", "대관료 (성수기)", "대관료 / 꽃장식 / 부페가 (기준: 2027년 1월~8월)").priceMin,
+    ).toBe(7500000);
+    expect(
+      findOne(priceItems, "라피네홀", "대관료 (비수기)", "대관료 / 꽃장식 / 부페가 (기준: 2027년 1월~8월)").priceMin,
+    ).toBe(2000000);
+    const flower = findItems(
+      priceItems,
+      "라피네홀",
+      "꽃장식 (성수기)",
+      "대관료 / 꽃장식 / 부페가 (기준: 2027년 1월~8월)",
+    );
+    expect(flower).toHaveLength(1);
+    expect(flower[0]?.priceMin).toBeNull();
+    expect(flower[0]?.rawValue).toBe("대관료에 포함");
+    expect(findOne(priceItems, "라피네홀", "부페가격 (성수기)", "부페가격 (기준: 2027년 1월~8월)").priceMin).toBe(75000);
+    expect(findOne(priceItems, "라피네홀", "부페가격 (비수기)", "부페가격 (기준: 2027년 1월~8월)").priceMin).toBe(60000);
+  });
+
+  it("시즌2 가격을 별도 기준 라벨로 읽는다", async () => {
+    const { priceItems } = await disclosure();
+    expect(
+      findOne(priceItems, "라피네홀", "대관료 (성수기)", "대관료 / 꽃장식 / 부페가 (기준: 2027년 9월~12월)").priceMin,
+    ).toBe(8500000);
+    expect(
+      findOne(priceItems, "라피네홀", "대관료 (비수기)", "대관료 / 꽃장식 / 부페가 (기준: 2027년 9월~12월)").priceMin,
+    ).toBe(4000000);
+    expect(findOne(priceItems, "라피네홀", "부페가격 (성수기)", "부페가격 (기준: 2027년 9월~12월)").priceMin).toBe(85000);
+    expect(findOne(priceItems, "라피네홀", "부페가격 (비수기)", "부페가격 (기준: 2027년 9월~12월)").priceMin).toBe(65000);
+  });
+
+  it("주요선택품목 서브테이블을 읽는다", async () => {
+    const { priceItems } = await disclosure();
+    expect(findOne(priceItems, "라피네홀", "본식촬영", null).priceMin).toBe(990000);
+    expect(findOne(priceItems, "라피네홀", "영상촬영", null).priceMin).toBe(770000);
+    expect(findOne(priceItems, "라피네홀", "사회자(1인)", null).priceMin).toBe(440000);
+    expect(findOne(priceItems, "라피네홀", "축가(1인)", null).priceMin).toBe(440000);
+    expect(findOne(priceItems, "라피네홀", "부페가포함", "음.주류").priceMin).toBeNull();
+  });
+
+  it("기타옵션 거대 셀의 멀티라인 가격을 모두 읽는다", async () => {
+    const { priceItems } = await disclosure();
+    expect(findOne(priceItems, "라피네홀", "본식촬영", "기타옵션").priceMin).toBe(990000);
+    expect(findOne(priceItems, "라피네홀", "아이폰스냅", "기타옵션").priceMin).toBe(440000);
+    expect(findOne(priceItems, "라피네홀", "혼주미용 여", "기타옵션").priceMin).toBe(220000);
+    expect(findOne(priceItems, "라피네홀", "남", "기타옵션").priceMin).toBe(66000);
+    expect(findOne(priceItems, "라피네홀", "사회(주례有)", "기타옵션").priceMin).toBe(330000);
+    expect(findOne(priceItems, "라피네홀", "사회(주례無)", "기타옵션").priceMin).toBe(440000);
+    expect(findOne(priceItems, "라피네홀", "플라워샤워", "기타옵션").priceMin).toBe(330000);
+    expect(findOne(priceItems, "라피네홀", "웰컴드링크", "기타옵션").priceMin).toBe(660000);
+    const options = priceItems.filter(
+      (item) => item.hallName === "라피네홀" && item.itemGroup === "기타옵션",
+    );
+    expect(options).toHaveLength(12);
+  });
+
+  it("콜론 위약금 정책 5건을 읽고 결혼준비대행업 섹션은 무시한다", async () => {
+    const { refundPolicies } = await disclosure();
+    expect(refundPolicies).toHaveLength(5);
+    expect(refundPolicies[0]?.periodText).toContain("150일 이전");
+    expect(refundPolicies[0]?.ruleText).toContain("15% 배상");
+    expect(refundPolicies[4]?.ruleText).toContain("100%");
+  });
+});
+
+describe("parseWeddingHallDisclosure 옐로라인가든 (변형 B·숫자 마커)", () => {
+  /** 옐로라인가든: ①/② 대신 '1. 가격'/'2. 계약해지' 숫자 마커를 쓰는 변형 B. */
+  const disclosure = async () => parseWeddingHallDisclosure(loadFixture("eloraine.xlsx"));
+
+  it("숫자 마커로도 섹션을 찾아 업체명·홀을 읽는다", async () => {
+    const d = await disclosure();
+    expect(d.venueName).toBe("옐로라인가든 웨딩홀");
+    expect(d.halls).toEqual(["엘로라홀"]);
+  });
+
+  it("시즌별 대관 가격을 읽는다", async () => {
+    const { priceItems } = await disclosure();
+    expect(
+      findOne(priceItems, "엘로라홀", "대관료 (성수기)", "대관료 / 꽃장식 / 부페가 (기준: 2027년 1월~8월)").priceMin,
+    ).toBe(7900000);
+    expect(
+      findOne(priceItems, "엘로라홀", "대관료 (비수기)", "대관료 / 꽃장식 / 부페가 (기준: 2027년 1월~8월)").priceMin,
+    ).toBe(2000000);
+    expect(
+      findOne(priceItems, "엘로라홀", "대관료 (성수기)", "대관료 / 꽃장식 / 부페가 (기준: 2027년 9월~12월)").priceMin,
+    ).toBe(8500000);
+    expect(
+      findOne(priceItems, "엘로라홀", "대관료 (비수기)", "대관료 / 꽃장식 / 부페가 (기준: 2027년 9월~12월)").priceMin,
+    ).toBe(3000000);
+  });
+
+  it("주요선택품목과 정책 6건을 읽는다", async () => {
+    const { priceItems, refundPolicies } = await disclosure();
+    expect(findOne(priceItems, "엘로라홀", "본식촬영", null).priceMin).toBe(1000000);
+    expect(refundPolicies).toHaveLength(6);
+    expect(refundPolicies[5]?.ruleText).toContain("100%");
+  });
+});
+
 describe("parseWeddingHallDisclosure 비정상 입력", () => {
   it("엑셀이 아니면 예외를 던진다", async () => {
     await expect(parseWeddingHallDisclosure(Buffer.from("not an excel file"))).rejects.toThrow();
