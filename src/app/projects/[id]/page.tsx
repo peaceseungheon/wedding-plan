@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { formatKRW } from "@/lib/domain/totals";
+import { REGION_OPTIONS, isRegionOption } from "@/lib/constants/regions";
 
 type BudgetCategoryBar = { readonly name: string; readonly plannedAmount: number };
 type UpcomingPayment = {
@@ -278,7 +279,7 @@ export default function DashboardPage() {
       body: JSON.stringify({
         title: form.title.trim(),
         weddingDate: form.weddingDate === "" ? null : form.weddingDate,
-        region: form.region.trim() === "" ? null : form.region.trim(),
+        region: form.region === "" ? null : form.region,
         guestCount: guestNumber,
       }),
     });
@@ -456,11 +457,22 @@ export default function DashboardPage() {
             </label>
             <label className="flex flex-1 flex-col gap-1 text-sm">
               지역
-              <input
+              <select
                 className="rounded border border-zinc-300 px-3 py-2"
                 value={form.region}
                 onChange={(event) => setForm((prev) => ({ ...prev, region: event.target.value }))}
-              />
+              >
+                <option value="">미지정</option>
+                {/* 드롭다운 이전 자유 텍스트 값 — 벤치마크 지역명과 불일치라 미연동임을 라벨로 알린다. */}
+                {form.region !== "" && !isRegionOption(form.region) && (
+                  <option value={form.region}>{form.region} (참가격 미연동)</option>
+                )}
+                {REGION_OPTIONS.map((region) => (
+                  <option key={region} value={region}>
+                    {region}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="flex w-32 flex-col gap-1 text-sm">
               하객 인원

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { REGION_OPTIONS } from "@/lib/constants/regions";
 
 /** 프로젝트 카드에 필요한 필드만. weddingDate는 ISO 문자열 또는 null. */
 type ProjectRow = {
@@ -110,7 +111,7 @@ export default function HomePage() {
     const body: Record<string, string | number | null> = {
       title: form.title.trim(),
       weddingDate: form.weddingDate === "" ? null : form.weddingDate,
-      region: form.region.trim() === "" ? null : form.region.trim(),
+      region: form.region === "" ? null : form.region,
       guestCount: guestNumber,
     };
     setCreating(true);
@@ -159,11 +160,18 @@ export default function HomePage() {
             </label>
             <label className="flex flex-1 flex-col gap-1 text-sm">
               지역 (선택)
-              <input
+              <select
                 className="rounded border border-zinc-300 px-3 py-2"
                 value={form.region}
                 onChange={(event) => setForm((prev) => ({ ...prev, region: event.target.value }))}
-              />
+              >
+                <option value="">미지정</option>
+                {REGION_OPTIONS.map((region) => (
+                  <option key={region} value={region}>
+                    {region}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="flex w-32 flex-col gap-1 text-sm">
               하객 인원 (선택)
