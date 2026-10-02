@@ -2,6 +2,11 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Field, inputClass } from "@/components/ui/field";
+import { PageHeader } from "@/components/ui/page-header";
 
 /** 스키마 VENDOR_CATEGORY enum 값. 라벨은 페이지 로컬 상수로 둔다. */
 const CATEGORY_OPTIONS = [
@@ -314,196 +319,195 @@ export default function VendorsPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8">
-      <h1 className="text-2xl font-semibold">업체 관리</h1>
+    <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-4 pt-8 pb-16">
+      <PageHeader title="업체 관리" meta={listPending ? undefined : <span>등록 업체 {rows.length}곳</span>} />
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">업체 검색</h2>
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <input
-            className="flex-1 rounded border border-zinc-300 px-3 py-2 text-sm"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="업체명으로 검색"
-          />
-          <button
-            type="submit"
-            className="rounded bg-zinc-900 px-4 py-2 text-sm text-white"
-          >
-            검색
-          </button>
-        </form>
-        {fallbackMessage !== null && <p className="text-sm text-zinc-600">{fallbackMessage}</p>}
-        {searchError !== null && <p className="text-sm text-red-600">{searchError}</p>}
-        {places.length > 0 && (
-          <ul className="flex flex-col gap-2">
-            {places.map((place, index) => (
-              <li key={`${place.placeName}-${index}`} className="flex flex-col gap-2 rounded border border-zinc-200 p-3">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-medium">{place.placeName}</span>
-                  {place.placeUrl.length > 0 && (
-                    <a
-                      href={place.placeUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 underline"
-                    >
-                      카카오 페이지
-                    </a>
-                  )}
-                </div>
-                <p className="text-sm text-zinc-600">{place.roadAddress.length > 0 ? place.roadAddress : place.address}</p>
-                {place.phone.length > 0 && <p className="text-sm text-zinc-600">{place.phone}</p>}
-                <div className="flex items-center gap-2">
-                  <select
-                    className="rounded border border-zinc-300 px-2 py-1.5 text-sm"
-                    value={resultCategories[index] ?? "WEDDING_HALL"}
-                    onChange={(event) => {
-                      const next = event.target.value;
-                      if (!isVendorCategory(next)) return;
-                      setResultCategories((prev) => ({ ...prev, [index]: next }));
-                    }}
-                    aria-label="분류"
-                  >
-                    {CATEGORY_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  {registeredIndexes.includes(index) ? (
-                    <span className="text-sm text-emerald-700">등록됨</span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => void registerFromSearch(index, place)}
-                      className="rounded bg-zinc-900 px-3 py-1.5 text-sm text-white"
-                    >
-                      등록
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+      <Card title="등록된 업체">
+        {listPending && <p className="text-sm text-ink-muted">불러오는 중...</p>}
+        {listError !== null && (
+          <p role="alert" className="text-sm text-negative">
+            {listError}
+          </p>
         )}
-        {searched && fallbackMessage === null && places.length === 0 && searchError === null && (
-          <p className="text-sm text-zinc-600">검색 결과가 없습니다.</p>
-        )}
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <button
-          type="button"
-          onClick={() => setShowManual((prev) => !prev)}
-          className="self-start rounded border border-zinc-300 px-3 py-1.5 text-sm"
-        >
-          수치 등록
-        </button>
-        {showManual && (
-          <form onSubmit={submitManual} className="flex flex-col gap-2 rounded border border-zinc-200 p-3">
-            <label className="flex flex-col gap-1 text-sm">
-              이름
-              <input
-                required
-                className="rounded border border-zinc-300 px-3 py-2"
-                value={manual.placeName}
-                onChange={(event) => setManual((prev) => ({ ...prev, placeName: event.target.value }))}
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              분류
-              <select
-                className="rounded border border-zinc-300 px-3 py-2"
-                value={manual.category}
-                onChange={(event) => {
-                  const next = event.target.value;
-                  if (!isVendorCategory(next)) return;
-                  setManual((prev) => ({ ...prev, category: next }));
-                }}
-              >
-                {CATEGORY_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              주소
-              <input
-                required
-                className="rounded border border-zinc-300 px-3 py-2"
-                value={manual.address}
-                onChange={(event) => setManual((prev) => ({ ...prev, address: event.target.value }))}
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              전화
-              <input
-                className="rounded border border-zinc-300 px-3 py-2"
-                value={manual.phone}
-                onChange={(event) => setManual((prev) => ({ ...prev, phone: event.target.value }))}
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              메모
-              <textarea
-                className="rounded border border-zinc-300 px-3 py-2"
-                rows={2}
-                value={manual.memo}
-                onChange={(event) => setManual((prev) => ({ ...prev, memo: event.target.value }))}
-              />
-            </label>
-            {manualError !== null && <p className="text-sm text-red-600">{manualError}</p>}
-            <button type="submit" className="self-start rounded bg-zinc-900 px-3 py-1.5 text-sm text-white">
-              등록
-            </button>
-          </form>
-        )}
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">등록된 업체</h2>
-        {listPending && <p className="text-sm text-zinc-600">불러오는 중...</p>}
-        {listError !== null && <p className="text-sm text-red-600">{listError}</p>}
         {!listPending && rows.length === 0 && listError === null && (
-          <p className="text-sm text-zinc-600">등록된 업체가 없습니다.</p>
+          <p className="text-sm text-ink-muted">등록된 업체가 없습니다.</p>
         )}
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col divide-y divide-line">
           {rows.map((row) => (
-            <li key={row.id} className="flex flex-col gap-1 rounded border border-zinc-200 p-3">
+            <li key={row.id} className="flex flex-col gap-1 py-3 text-sm first:pt-0 last:pb-0">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => void toggleFavorite(row)}
                   aria-label={row.isFavorite ? "즐겨찾기 해제" : "즐겨찾기"}
-                  className="text-lg leading-none"
+                  className="text-lg leading-none text-ink-muted hover:text-ink"
                 >
                   {row.isFavorite ? "★" : "☆"}
                 </button>
                 <span className="font-medium">{row.vendor.name}</span>
-                <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700">
-                  {CATEGORY_LABELS[row.vendor.category]}
-                </span>
-                <span
-                  className={
-                    row.status === "CONTRACTED"
-                      ? "rounded bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800"
-                      : "rounded bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700"
-                  }
-                >
-                  {row.status === "CONTRACTED" ? "계약" : "후보"}
-                </span>
-                <span className="ml-auto text-sm text-zinc-600">견적 {row.quoteCount}건</span>
+                <Badge tone="neutral">{CATEGORY_LABELS[row.vendor.category]}</Badge>
+                {row.status === "CONTRACTED" ? (
+                  <Badge tone="positive">✓ 계약</Badge>
+                ) : (
+                  <Badge tone="neutral">후보</Badge>
+                )}
+                <span className="ml-auto tabular-nums text-ink-muted">견적 {row.quoteCount}건</span>
               </div>
-              {row.vendor.address !== null && <p className="text-sm text-zinc-600">{row.vendor.address}</p>}
-              {row.vendor.phone !== null && <p className="text-sm text-zinc-600">{row.vendor.phone}</p>}
-              {row.memo !== null && <p className="text-sm text-zinc-500">메모: {row.memo}</p>}
+              {row.vendor.address !== null && <p className="text-ink-muted">{row.vendor.address}</p>}
+              {row.vendor.phone !== null && <p className="tabular-nums text-ink-muted">{row.vendor.phone}</p>}
+              {row.memo !== null && <p className="text-ink-subtle">메모: {row.memo}</p>}
             </li>
           ))}
         </ul>
-      </section>
+      </Card>
+
+      <Card title="업체 검색">
+        <div className="flex flex-col gap-3">
+          <form onSubmit={handleSearch} className="flex gap-2">
+            <input
+              className={`${inputClass} min-w-0 flex-1`}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="업체명으로 검색"
+              aria-label="업체명"
+            />
+            <Button type="submit">검색</Button>
+          </form>
+          {fallbackMessage !== null && <p className="text-sm text-ink-muted">{fallbackMessage}</p>}
+          {searchError !== null && (
+            <p role="alert" className="text-sm text-negative">
+              {searchError}
+            </p>
+          )}
+          {places.length > 0 && (
+            <ul className="flex flex-col divide-y divide-line">
+              {places.map((place, index) => (
+                <li key={`${place.placeName}-${index}`} className="flex flex-col gap-2 py-3 text-sm last:pb-0">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="font-medium">{place.placeName}</span>
+                    {place.placeUrl.length > 0 && (
+                      <a
+                        href={place.placeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 text-xs text-ink-muted underline hover:text-ink"
+                      >
+                        카카오 페이지
+                      </a>
+                    )}
+                  </div>
+                  <p className="text-ink-muted">{place.roadAddress.length > 0 ? place.roadAddress : place.address}</p>
+                  {place.phone.length > 0 && <p className="tabular-nums text-ink-muted">{place.phone}</p>}
+                  <div className="flex items-center gap-2">
+                    <select
+                      className={`${inputClass} h-8 w-auto`}
+                      value={resultCategories[index] ?? "WEDDING_HALL"}
+                      onChange={(event) => {
+                        const next = event.target.value;
+                        if (!isVendorCategory(next)) return;
+                        setResultCategories((prev) => ({ ...prev, [index]: next }));
+                      }}
+                      aria-label="분류"
+                    >
+                      {CATEGORY_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    {registeredIndexes.includes(index) ? (
+                      <p role="status" className="text-sm text-positive">
+                        ✓ 등록됨
+                      </p>
+                    ) : (
+                      <Button variant="secondary" size="sm" onClick={() => void registerFromSearch(index, place)}>
+                        등록
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          {searched && fallbackMessage === null && places.length === 0 && searchError === null && (
+            <p className="text-sm text-ink-muted">검색 결과가 없습니다.</p>
+          )}
+        </div>
+      </Card>
+
+      <Card
+        title="직접 등록"
+        action={
+          <Button variant="ghost" size="sm" onClick={() => setShowManual((prev) => !prev)}>
+            수치 등록
+          </Button>
+        }
+      >
+        {showManual ? (
+          <form onSubmit={submitManual} className="flex flex-col gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="이름">
+                <input
+                  required
+                  className={inputClass}
+                  value={manual.placeName}
+                  onChange={(event) => setManual((prev) => ({ ...prev, placeName: event.target.value }))}
+                />
+              </Field>
+              <Field label="분류">
+                <select
+                  className={inputClass}
+                  value={manual.category}
+                  onChange={(event) => {
+                    const next = event.target.value;
+                    if (!isVendorCategory(next)) return;
+                    setManual((prev) => ({ ...prev, category: next }));
+                  }}
+                >
+                  {CATEGORY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="주소">
+                <input
+                  required
+                  className={inputClass}
+                  value={manual.address}
+                  onChange={(event) => setManual((prev) => ({ ...prev, address: event.target.value }))}
+                />
+              </Field>
+              <Field label="전화">
+                <input
+                  className={inputClass}
+                  value={manual.phone}
+                  onChange={(event) => setManual((prev) => ({ ...prev, phone: event.target.value }))}
+                />
+              </Field>
+            </div>
+            <Field label="메모">
+              <textarea
+                className={`${inputClass} h-auto py-2`}
+                rows={2}
+                value={manual.memo}
+                onChange={(event) => setManual((prev) => ({ ...prev, memo: event.target.value }))}
+              />
+            </Field>
+            {manualError !== null && (
+              <p role="alert" className="text-sm text-negative">
+                {manualError}
+              </p>
+            )}
+            <Button type="submit" variant="secondary" className="self-start">
+              등록
+            </Button>
+          </form>
+        ) : (
+          <p className="text-sm text-ink-muted">검색되지 않는 업체는 직접 입력해 등록합니다.</p>
+        )}
+      </Card>
     </main>
   );
 }

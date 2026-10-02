@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AppShell } from "@/components/ui/app-shell";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Field, inputClass } from "@/components/ui/field";
+import { PageHeader } from "@/components/ui/page-header";
 
 /** 목록 카드에 필요한 필드만. disclosedAt은 ISO 문자열 또는 null. */
 type HallRow = {
@@ -125,62 +130,77 @@ export default function WeddingHallsPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold">예식장 공개자료 조회</h1>
-        <Link href="/" className="text-sm text-zinc-600 underline-offset-4 hover:underline">
-          프로젝트로 돌아가기
-        </Link>
-      </div>
-      <p className="text-sm text-zinc-600">
-        한국소비자원 참가격(portal)에 공개된 예식장 가격·환급 기준을 수집한 목록입니다.
-      </p>
-
-      <label className="flex w-fit flex-col gap-1 text-sm">
-        지역 필터
-        <select
-          className="rounded border border-zinc-300 px-3 py-2"
-          value={region}
-          onChange={(event) => handleRegionChange(event.target.value)}
-        >
-          <option value="">전체</option>
-          {regions.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      {halls === null && listError === null && <p className="text-sm text-zinc-600">불러오는 중...</p>}
-      {listError !== null && <p className="text-sm text-red-600">{listError}</p>}
-      {halls !== null && halls.length === 0 && listError === null && (
-        <p className="text-sm text-zinc-600">해당 조건의 예식장 공개자료가 없습니다.</p>
-      )}
-
-      <ul className="flex flex-col gap-2">
-        {(halls ?? []).map((row) => (
-          <li key={row.id}>
-            <Link
-              href={`/wedding-halls/${row.id}`}
-              className="flex flex-col gap-1 rounded border border-zinc-200 p-3 hover:border-zinc-400"
-            >
-              <span className="flex items-center justify-between gap-2">
-                <span className="font-medium">{row.venueName}</span>
-                <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700">{row.region}</span>
-              </span>
-              <span className="text-sm text-zinc-600">
-                {row.address !== null ? row.address : "주소 미공개"}
-                {row.phone !== null ? ` · ${row.phone}` : ""}
-              </span>
-              <span className="text-sm text-zinc-500">
-                {row.disclosedAt !== null ? `자료 공개일 ${row.disclosedAt.slice(0, 10)}` : "공개일 미확인"}
-                {` · 가격 항목 ${row.priceItemCount}건`}
-              </span>
+    <AppShell>
+      <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-4 pt-8 pb-16">
+        <PageHeader
+          title="예식장 공개자료 조회"
+          meta={<span>한국소비자원 참가격(portal)에 공개된 예식장 가격·환급 기준을 수집한 목록입니다.</span>}
+          aside={
+            <Link href="/" className="text-sm text-ink-muted underline-offset-4 hover:text-ink hover:underline">
+              프로젝트로 돌아가기
             </Link>
-          </li>
-        ))}
-      </ul>
-    </main>
+          }
+        />
+
+        <Card
+          title="예식장 목록"
+          action={
+            halls === null ? undefined : (
+              <span className="text-[13px] tabular-nums text-ink-muted">{halls.length}곳</span>
+            )
+          }
+        >
+          <div className="flex flex-col gap-4">
+            <div className="w-full sm:w-60">
+              <Field label="지역 필터">
+                <select
+                  className={inputClass}
+                  value={region}
+                  onChange={(event) => handleRegionChange(event.target.value)}
+                >
+                  <option value="">전체</option>
+                  {regions.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+
+            {halls === null && listError === null && <p className="text-sm text-ink-muted">불러오는 중...</p>}
+            {listError !== null && (
+              <p role="alert" className="text-sm text-negative">
+                {listError}
+              </p>
+            )}
+            {halls !== null && halls.length === 0 && listError === null && (
+              <p className="text-sm text-ink-muted">해당 조건의 예식장 공개자료가 없습니다.</p>
+            )}
+
+            <ul className="flex flex-col divide-y divide-line">
+              {(halls ?? []).map((row) => (
+                <li key={row.id}>
+                  <Link href={`/wedding-halls/${row.id}`} className="group flex flex-col gap-1 py-3 text-sm">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="font-medium group-hover:underline">{row.venueName}</span>
+                      <Badge tone="neutral">{row.region}</Badge>
+                    </span>
+                    <span className="text-ink-muted">
+                      {row.address !== null ? row.address : "주소 미공개"}
+                      {row.phone !== null ? ` · ${row.phone}` : ""}
+                    </span>
+                    <span className="tabular-nums text-ink-subtle">
+                      {row.disclosedAt !== null ? `자료 공개일 ${row.disclosedAt.slice(0, 10)}` : "공개일 미확인"}
+                      {` · 가격 항목 ${row.priceItemCount}건`}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Card>
+      </main>
+    </AppShell>
   );
 }

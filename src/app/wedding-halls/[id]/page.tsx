@@ -3,6 +3,19 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { formatKRW } from "@/lib/domain/totals";
+import { AppShell } from "@/components/ui/app-shell";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
+import {
+  DataTable,
+  headRowClass,
+  numClass,
+  rowClass,
+  tdClass,
+  thClass,
+} from "@/components/ui/table";
 
 type PriceItemRow = {
   readonly hallName: string;
@@ -121,13 +134,13 @@ function formatPrice(item: PriceItemRow): string {
     return item.rawValue !== null && item.rawValue.length > 0 ? item.rawValue : "-";
   }
   if (min !== null && max !== null) {
-    return min === max ? `${min.toLocaleString("ko-KR")}원` : `${min.toLocaleString("ko-KR")} ~ ${max.toLocaleString("ko-KR")}원`;
+    return min === max ? formatKRW(min) : `${formatKRW(min)} ~ ${formatKRW(max)}`;
   }
   if (min !== null) {
-    return `${min.toLocaleString("ko-KR")}원 ~`;
+    return `${formatKRW(min)} ~`;
   }
   if (max !== null) {
-    return `~ ${max.toLocaleString("ko-KR")}원`;
+    return `~ ${formatKRW(max)}`;
   }
   return "-";
 }
@@ -174,78 +187,88 @@ export default function WeddingHallDetailPage() {
   const hallsByOrder: readonly string[] = hall === null ? [] : [...new Set(hall.priceItems.map((i) => i.hallName))];
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold">{hall === null ? "예식장 상세" : hall.venueName}</h1>
-        <Link href="/wedding-halls" className="text-sm text-zinc-600 underline-offset-4 hover:underline">
-          목록으로
-        </Link>
-      </div>
+    <AppShell>
+      <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-4 pt-8 pb-16">
+        <PageHeader
+          title={hall === null ? "예식장 상세" : hall.venueName}
+          meta={
+            hall === null ? undefined : (
+              <>
+                <Badge tone="neutral">{hall.region}</Badge>
+                <span>{hall.address !== null ? hall.address : "주소 미공개"}</span>
+                <span className="tabular-nums">{hall.phone !== null ? `연락처 ${hall.phone}` : "연락처 미공개"}</span>
+                <span className="tabular-nums text-ink-subtle wrap-anywhere">
+                  {hall.disclosedAt !== null ? `자료 공개일 ${hall.disclosedAt.slice(0, 10)}` : "공개일 미확인"}
+                  {hall.fileName !== null ? ` · 원본 ${hall.fileName}` : ""}
+                </span>
+              </>
+            )
+          }
+          aside={
+            <Link
+              href="/wedding-halls"
+              className="text-sm text-ink-muted underline-offset-4 hover:text-ink hover:underline"
+            >
+              목록으로
+            </Link>
+          }
+        />
 
-      {hall === null && loadError === null && <p className="text-sm text-zinc-600">불러오는 중...</p>}
-      {loadError !== null && <p className="text-sm text-red-600">{loadError}</p>}
+        {hall === null && loadError === null && <p className="text-sm text-ink-muted">불러오는 중...</p>}
+        {loadError !== null && (
+          <p role="alert" className="text-sm text-negative">
+            {loadError}
+          </p>
+        )}
 
-      {hall !== null && (
-        <>
-          <section className="flex flex-col gap-1 rounded border border-zinc-200 p-3 text-sm">
-            <span>
-              <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700">{hall.region}</span>
-            </span>
-            <span className="text-zinc-700">{hall.address !== null ? hall.address : "주소 미공개"}</span>
-            <span className="text-zinc-700">{hall.phone !== null ? `연락처 ${hall.phone}` : "연락처 미공개"}</span>
-            <span className="text-zinc-500">
-              {hall.disclosedAt !== null ? `자료 공개일 ${hall.disclosedAt.slice(0, 10)}` : "공개일 미확인"}
-              {hall.fileName !== null ? ` · 원본 ${hall.fileName}` : ""}
-            </span>
-          </section>
+        {hall !== null && (
+          <>
+            {hall.priceItems.length === 0 && (
+              <p className="text-sm text-ink-muted">
+                이 공개자료는 파싱 가능한 가격 항목이 없습니다(원본 파일 형식 미지원 등).
+              </p>
+            )}
 
-          {hall.priceItems.length === 0 && (
-            <p className="text-sm text-zinc-600">
-              이 공개자료는 파싱 가능한 가격 항목이 없습니다(원본 파일 형식 미지원 등).
-            </p>
-          )}
+            {hallsByOrder.map((hallName) => (
+              <Card key={hallName} title={hallName}>
+                <DataTable minWidth={420}>
+                  <thead>
+                    <tr className={headRowClass}>
+                      <th className={thClass}>구분</th>
+                      <th className={thClass}>항목</th>
+                      <th className={`${thClass} text-right`}>가격</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {hall.priceItems
+                      .filter((item) => item.hallName === hallName)
+                      .map((item) => (
+                        <tr key={item.sortOrder} className={rowClass}>
+                          <td className={`${tdClass} text-ink-muted`}>{item.itemGroup ?? ""}</td>
+                          <td className={tdClass}>{item.itemName}</td>
+                          <td className={`${tdClass} ${numClass}`}>{formatPrice(item)}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </DataTable>
+              </Card>
+            ))}
 
-          {hallsByOrder.map((hallName) => (
-            <section key={hallName} className="flex flex-col gap-2">
-              <h2 className="text-lg font-medium">{hallName}</h2>
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-zinc-200 text-left text-zinc-600">
-                    <th className="py-1.5 pr-2 font-medium">구분</th>
-                    <th className="py-1.5 pr-2 font-medium">항목</th>
-                    <th className="py-1.5 font-medium">가격</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {hall.priceItems
-                    .filter((item) => item.hallName === hallName)
-                    .map((item) => (
-                      <tr key={item.sortOrder} className="border-b border-zinc-100 align-top">
-                        <td className="py-1.5 pr-2 text-zinc-600">{item.itemGroup ?? ""}</td>
-                        <td className="py-1.5 pr-2">{item.itemName}</td>
-                        <td className="py-1.5 whitespace-nowrap">{formatPrice(item)}</td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </section>
-          ))}
-
-          {hall.refundPolicies.length > 0 && (
-            <section className="flex flex-col gap-2">
-              <h2 className="text-lg font-medium">계약해지 위약금·환급 산정기준</h2>
-              <ul className="flex flex-col gap-1 text-sm">
-                {hall.refundPolicies.map((policy) => (
-                  <li key={policy.sortOrder} className="flex flex-col rounded border border-zinc-200 p-2">
-                    <span className="font-medium">{policy.periodText}</span>
-                    <span className="text-zinc-700">{policy.ruleText}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-        </>
-      )}
-    </main>
+            {hall.refundPolicies.length > 0 && (
+              <Card title="계약해지 위약금·환급 산정기준">
+                <ul className="flex flex-col divide-y divide-line text-sm">
+                  {hall.refundPolicies.map((policy) => (
+                    <li key={policy.sortOrder} className="flex flex-col gap-0.5 py-2.5 first:pt-0 last:pb-0">
+                      <span className="font-medium">{policy.periodText}</span>
+                      <span className="text-ink-muted">{policy.ruleText}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
+          </>
+        )}
+      </main>
+    </AppShell>
   );
 }
