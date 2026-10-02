@@ -47,3 +47,13 @@
 ## 5. 지침 갱신 지시
 
 지침에 없는 상황을 만나면 임의로 판단하지 않고 사용자에게 질의한다. 질의 결과로 새 관행이 확립되면 해당 지침 문서를 먼저 갱신한 뒤 작업을 진행한다. 지침 갱신 자체는 [Git 워크플로우](docs/guidelines/version-control/git-workflow.md)의 PR 절차를 따른다.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
