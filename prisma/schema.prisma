@@ -206,11 +206,11 @@ model wedding_hall_disclosures {
   id          String    @id @default(cuid())
   boardSeq    Int       @unique
   region      String
-  venueName   String
-  address     String?
+  venueName   String    @db.Text
+  address     String?   @db.Text
   phone       String?
   fileRgtnSeq Int?
-  fileName    String?
+  fileName    String?   @db.Text
   disclosedAt DateTime?
   scrapedAt   DateTime  @default(now())
 
@@ -223,10 +223,10 @@ model wedding_hall_disclosures {
 model wedding_hall_price_items {
   id           String  @id @default(cuid())
   disclosureId String
-  hallName     String
-  itemGroup    String?
-  itemName     String
-  rawValue     String?
+  hallName     String  @db.Text
+  itemGroup    String? @db.Text
+  itemName     String  @db.Text
+  rawValue     String? @db.Text
   priceMin     Int?
   priceMax     Int?
   sortOrder    Int
@@ -239,8 +239,8 @@ model wedding_hall_price_items {
 model wedding_hall_refund_policies {
   id           String @id @default(cuid())
   disclosureId String
-  periodText   String
-  ruleText     String
+  periodText   String @db.Text
+  ruleText     String @db.Text
   sortOrder    Int
 
   disclosure wedding_hall_disclosures @relation(fields: [disclosureId], references: [id], onDelete: Cascade)
