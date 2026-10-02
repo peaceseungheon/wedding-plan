@@ -8,14 +8,17 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Field, inputClass } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/page-header";
+import { WeddingHallMap, type WeddingHallMapMarker } from "@/components/wedding-hall-map";
 
-/** 목록 카드에 필요한 필드만. disclosedAt은 ISO 문자열 또는 null. */
+/** 목록 카드·지도 마커에 필요한 필드만. disclosedAt은 ISO 문자열 또는 null. */
 type HallRow = {
   readonly id: string;
   readonly region: string;
   readonly venueName: string;
   readonly address: string | null;
   readonly phone: string | null;
+  readonly latitude: number | null;
+  readonly longitude: number | null;
   readonly disclosedAt: string | null;
   readonly priceItemCount: number;
 };
@@ -51,6 +54,8 @@ function parseHalls(body: unknown): readonly HallRow[] | null {
     if (typeof venueName !== "string") return [];
     const address = "address" in item ? item.address : undefined;
     const phone = "phone" in item ? item.phone : undefined;
+    const latitude = "latitude" in item ? item.latitude : undefined;
+    const longitude = "longitude" in item ? item.longitude : undefined;
     const disclosedAt = "disclosedAt" in item ? item.disclosedAt : undefined;
     const priceItemCount = "priceItemCount" in item ? item.priceItemCount : undefined;
     return [
@@ -60,6 +65,8 @@ function parseHalls(body: unknown): readonly HallRow[] | null {
         venueName,
         address: typeof address === "string" ? address : null,
         phone: typeof phone === "string" ? phone : null,
+        latitude: typeof latitude === "number" ? latitude : null,
+        longitude: typeof longitude === "number" ? longitude : null,
         disclosedAt: typeof disclosedAt === "string" ? disclosedAt : null,
         priceItemCount: typeof priceItemCount === "number" ? priceItemCount : 0,
       },
@@ -129,6 +136,22 @@ export default function WeddingHallsPage() {
     void loadHalls(next);
   }
 
+  // 좌표가 있는 홀만 지도에 올린다 — geocode 미완료 홀은 목록에만 남는다.
+  const markerHalls: readonly WeddingHallMapMarker[] = (halls ?? []).flatMap(
+    (row): WeddingHallMapMarker[] => {
+      if (row.latitude === null || row.longitude === null) return [];
+      return [
+        {
+          id: row.id,
+          venueName: row.venueName,
+          region: row.region,
+          latitude: row.latitude,
+          longitude: row.longitude,
+        },
+      ];
+    },
+  );
+
   return (
     <AppShell>
       <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-4 pt-8 pb-16">
@@ -141,6 +164,8 @@ export default function WeddingHallsPage() {
             </Link>
           }
         />
+
+        {halls !== null && listError === null && <WeddingHallMap halls={markerHalls} />}
 
         <Card
           title="예식장 목록"
