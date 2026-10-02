@@ -273,14 +273,61 @@ describe("parseWeddingHallDisclosure 더컨벤션 (통합 시트형)", () => {
   });
 });
 
+describe("parseWeddingHallDisclosure 캠퍼트리 (구형 .xls·단위 승수)", () => {
+  const disclosure = async () => parseWeddingHallDisclosure(loadFixture("camp_tree.xls"));
+
+  it("업체명과 홀 5개를 읽는다", async () => {
+    const d = await disclosure();
+    expect(d.venueName).toBe("캠퍼트리 호텔 앤 리조트");
+    expect(d.halls).toEqual([
+      "탐라홀",
+      "야외가든",
+      "더테라스",
+      "더뷰",
+      "프레지덴셜 스위트\n(저녁예식+10인숙박)",
+    ]);
+  });
+
+  it("천원/만원 단위 가격에 승수를 적용해 원 단위로 정규화한다", async () => {
+    const { priceItems } = await disclosure();
+    const basic = findOne(priceItems, "탐라홀", "기본 300명~1000명", "식비");
+    expect(basic.priceMin).toBe(58000);
+    expect(basic.priceMax).toBe(78000);
+    const rental = findOne(priceItems, "탐라홀", "대관", "대관료, 장식비");
+    expect(rental.priceMin).toBe(2000000);
+    expect(rental.priceMax).toBe(2000000);
+    expect(findOne(priceItems, "탐라홀", "장식비", "대관료, 장식비").priceMin).toBe(1900000);
+  });
+
+  it("블록별 선택품목과 나머지 홀 가격을 읽는다", async () => {
+    const { priceItems } = await disclosure();
+    expect(findOne(priceItems, "탐라홀", "주류", "식음료 추가").priceMin).toBe(8000);
+    expect(findOne(priceItems, "탐라홀", "음료", "식음료 추가").priceMin).toBe(4000);
+    expect(findOne(priceItems, "더뷰", "장식비", "대관료, 장식비").priceMin).toBe(2430000);
+    expect(
+      findOne(priceItems, "프레지덴셜 스위트\n(저녁예식+10인숙박)", "대관", "대관료, 장식비").priceMin,
+    ).toBe(3300000);
+    expect(findOne(priceItems, "더테라스", "기본 30명~100명", "식비").priceMin).toBe(95000);
+    expect(priceItems).toHaveLength(30);
+  });
+
+  it("콜론 없는 단일 정책 라인을 periodText로 저장한다", async () => {
+    const { refundPolicies } = await disclosure();
+    expect(refundPolicies).toHaveLength(1);
+    expect(refundPolicies[0]?.periodText).toBe(
+      "소비자분쟁해결기준과 동일, 위약금 산정 기준은 소비자 귀책사유 시에만 적용",
+    );
+    expect(refundPolicies[0]?.ruleText).toBe("");
+  });
+});
+
 describe("parseWeddingHallDisclosure 비정상 입력", () => {
   it("엑셀이 아니면 예외를 던진다", async () => {
     await expect(parseWeddingHallDisclosure(Buffer.from("not an excel file"))).rejects.toThrow();
   });
 
-  it("구형 .xls(CDFV2 시그니처)면 안내 메시지와 함께 예외를 던진다", async () => {
-    const cdfv2 = Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
-    await expect(parseWeddingHallDisclosure(cdfv2)).rejects.toThrow("구형 .xls 형식");
+  it("한글(HWP) 문서처럼 Excel이 아닌 OLE2 첨부면 안내 메시지와 함께 예외를 던진다", async () => {
+    await expect(parseWeddingHallDisclosure(loadFixture("jey_art.xls"))).rejects.toThrow("한글(HWP)");
   });
 
   it("섹션 마커(①/②)가 없는 시트면 예외를 던진다", async () => {

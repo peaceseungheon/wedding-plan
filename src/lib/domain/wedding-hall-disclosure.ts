@@ -1,13 +1,14 @@
 import ExcelJS from "exceljs";
+import * as XLSX from "xlsx";
 
 /** 개인용 영역 유니코드 아이콘(BMP + 보충 영역 A) — 업체명 등에 섞여 들어온다. */
 const PUA_RE = /[\uE000-\uF8FF\u{F0000}-\u{FFFFD}]/gu;
-/** 닫힌 범위 가격: "85,000~130,000원", "99,000원~132,000원" */
-const RANGE_RE = /(\d[\d,]*)\s*원?\s*~\s*(\d[\d,]*)\s*원?/g;
-/** 열린 범위 가격: "7,000,000원~" */
-const OPEN_RANGE_RE = /(\d[\d,]*)\s*원\s*~/g;
-/** 단일 가격: "4,200,000원" */
-const SINGLE_RE = /(\d[\d,]*)\s*원/g;
+/** 닫힌 범위 가격: "85,000~130,000원", "99,000원~132,000원", "58천원 ~ 78천원" */
+const RANGE_RE = /(\d[\d,]*)\s*(만원|천원|원)?\s*~\s*(\d[\d,]*)\s*(만원|천원|원)?/g;
+/** 열린 범위 가격: "7,000,000원~" — 단위를 요구해 "300명~1000명" 같은 인원 표기와 겹치지 않게 한다. */
+const OPEN_RANGE_RE = /(\d[\d,]*)\s*(만원|천원|원)\s*~/g;
+/** 단일 가격: "4,200,000원", "200만원", "8천원" */
+const SINGLE_RE = /(\d[\d,]*)\s*(만원|천원|원)/g;
 
 export interface WeddingHallPriceItem {
   hallName: string;
@@ -69,6 +70,14 @@ function parseNumber(text: string): number {
   return Number(text.replace(/,/g, ""));
 }
 
+/** 가격 숫자에 단위 승수(만원=10000, 천원=1000)를 곱한다. 단위가 없으면 이미 원 단위다. */
+function unitValue(text: string, unit: string | undefined): number {
+  const base = parseNumber(text);
+  if (unit === "만원") return base * 10000;
+  if (unit === "천원") return base * 1000;
+  return base;
+}
+
 /** 한 줄에서 가격 세그먼트 전체를 뽑는다. 이름은 직전 세그먼트 끝부터 현재 시작 사이 텍스트. */
 function extractSegments(line: string): PriceSegment[] {
   interface RawMatch {
@@ -86,8 +95,8 @@ function extractSegments(line: string): PriceSegment[] {
     matches.push({
       start: match.index ?? 0,
       end: (match.index ?? 0) + match[0].length,
-      min: parseNumber(match[1]!),
-      max: parseNumber(match[2]!),
+      min: unitValue(match[1]!, match[2]),
+      max: unitValue(match[3]!, match[4]),
       text: match[0],
     });
   }
@@ -97,7 +106,7 @@ function extractSegments(line: string): PriceSegment[] {
     matches.push({
       start,
       end: start + match[0].length,
-      min: parseNumber(match[1]!),
+      min: unitValue(match[1]!, match[2]),
       max: null,
       text: match[0],
     });
@@ -108,8 +117,8 @@ function extractSegments(line: string): PriceSegment[] {
     matches.push({
       start,
       end: start + match[0].length,
-      min: parseNumber(match[1]!),
-      max: parseNumber(match[1]!),
+      min: unitValue(match[1]!, match[2]),
+      max: unitValue(match[1]!, match[2]),
       text: match[0],
     });
   }
@@ -143,23 +152,63 @@ interface HallBlock {
 export async function parseWeddingHallDisclosure(
   buffer: Buffer,
 ): Promise<WeddingHallDisclosure> {
-  // D0 CF 11 E0: Excel 97-2003 바이너리(.xls) 시그니처. exceljs는 읽지 못한다.
-  if (buffer.length >= 4 && buffer[0] === 0xd0 && buffer[1] === 0xcf && buffer[2] === 0x11 && buffer[3] === 0xe0) {
-    throw new Error("구형 .xls 형식(Excel 97-2003)은 지원하지 않습니다. xlsx(Excel 2007+)만 파싱할 수 있습니다.");
-  }
-  const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
-  const worksheet = workbook.worksheets[0];
-  if (!worksheet) throw new Error("워크시트가 비어 있어 예식장 공개 자료를 해석할 수 없습니다.");
-
-  const rowCount = worksheet.rowCount;
-  const colCount = worksheet.columnCount;
+  // D0 CF 11 E0: OLE2 컨테이너 시그니처 — 구형 .xls(Excel 97-2003)와 한글(HWP) 문서가 공유한다.
+  // exceljs는 이 형식을 읽지 못하므로 SheetJS로 읽는다. HWP는 Workbook 스트림이 없어 로드에 실패한다.
+  let rowCount = 0;
+  let colCount = 0;
   const grid: string[][] = [];
-  for (let row = 1; row <= rowCount; row += 1) {
-    grid[row] = [""];
-    const worksheetRow = worksheet.getRow(row);
-    for (let col = 1; col <= colCount; col += 1) {
-      grid[row][col] = cleanText(cellToString(worksheetRow.getCell(col).value));
+  const isOle2 =
+    buffer.length >= 4 && buffer[0] === 0xd0 && buffer[1] === 0xcf && buffer[2] === 0x11 && buffer[3] === 0xe0;
+  if (isOle2) {
+    let workbook: XLSX.WorkBook;
+    try {
+      workbook = XLSX.read(buffer, { type: "buffer" });
+    } catch {
+      throw new Error("한글(HWP) 문서 등 Excel 통합문서가 아닌 OLE2 첨부는 지원하지 않습니다.");
+    }
+    const sheetName = workbook.SheetNames[0];
+    const sheet = sheetName === undefined ? undefined : workbook.Sheets[sheetName];
+    if (sheet === undefined) throw new Error("워크시트가 비어 있어 예식장 공개 자료를 해석할 수 없습니다.");
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
+      header: 1,
+      raw: false,
+      defval: null,
+      blankrows: true,
+    });
+    rowCount = rows.length;
+    for (const row of rows) colCount = Math.max(colCount, row?.length ?? 0);
+    for (let row = 1; row <= rowCount; row += 1) grid[row] = [""];
+    for (let row = 0; row < rows.length; row += 1) {
+      const cells = rows[row] ?? [];
+      for (let col = 0; col < cells.length; col += 1) {
+        const value = cells[col];
+        grid[row + 1][col + 1] = cleanText(value === null || value === undefined ? "" : String(value));
+      }
+    }
+    // SheetJS는 병합 범위에 좌상단 값을 전파하지 않는다 — exceljs 그리드와 같은 모양으로 만들려고 직접 채운다.
+    for (const merge of sheet["!merges"] ?? []) {
+      const origin = grid[merge.s.r + 1]?.[merge.s.c + 1] ?? "";
+      if (origin === "") continue;
+      for (let row = merge.s.r; row <= merge.e.r; row += 1) {
+        for (let col = merge.s.c; col <= merge.e.c; col += 1) {
+          if (grid[row + 1] === undefined) continue;
+          grid[row + 1][col + 1] = origin;
+        }
+      }
+    }
+  } else {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
+    const worksheet = workbook.worksheets[0];
+    if (!worksheet) throw new Error("워크시트가 비어 있어 예식장 공개 자료를 해석할 수 없습니다.");
+    rowCount = worksheet.rowCount;
+    colCount = worksheet.columnCount;
+    for (let row = 1; row <= rowCount; row += 1) {
+      grid[row] = [""];
+      const worksheetRow = worksheet.getRow(row);
+      for (let col = 1; col <= colCount; col += 1) {
+        grid[row][col] = cleanText(cellToString(worksheetRow.getCell(col).value));
+      }
     }
   }
 
