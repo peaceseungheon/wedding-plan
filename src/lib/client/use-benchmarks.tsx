@@ -7,6 +7,8 @@ import {
   matchBenchmark,
   type BenchmarkRow,
 } from "@/lib/domain/benchmark";
+import { benchmarkTone } from "@/lib/domain/tone";
+import { Badge } from "@/components/ui/badge";
 
 /**
  * 클라이언트 화면용 참가격 벤치마크 소비 프리미티브. 프로젝트 region을 조회해
@@ -109,8 +111,8 @@ export function BenchmarkDeltaLabel({
   });
   if (delta === null) return null;
   return (
-    <span className="block text-xs text-zinc-500">
-      지역 평균 대비 {formatBenchmarkDelta(delta)}
+    <span className="mt-1 block">
+      <Badge tone={benchmarkTone(delta)}>평균 대비 {formatBenchmarkDelta(delta)}</Badge>
     </span>
   );
 }
