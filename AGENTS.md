@@ -19,6 +19,9 @@
 | [스택 지침](docs/guidelines/stack/README.md) | 특정 언어, 프레임워크 작업 시작 전, 반드시 여기부터 |
 | [스택 지침 양식](docs/guidelines/stack/_template.md) | 새 스택 지침 문서를 만들 때 쓰는 양식 |
 | [TypeScript 스택 지침](docs/guidelines/stack/typescript.md) | TypeScript, Next.js 코드 작업 시작 전 |
+| [UI 디자인 지침](docs/guidelines/design/ui-design.md) | 화면(UI)을 만들거나 고치는 작업 전 |
+| [DESIGN.md](DESIGN.md) | UI 작업의 시각 기준(토큰, 컴포넌트, 금지 패턴). UI 디자인 지침이 읽는 시점과 갱신 규칙을 정한다 |
+| [PRODUCT.md](PRODUCT.md) | 새 화면·흐름을 설계할 때 제품 맥락(사용자, 목적, 원칙) |
 
 ## 3. 경계
 
@@ -27,6 +30,7 @@
 - 지침 문서를 준수한다.
 - 버그픽스에는 재현 테스트를 동반한다.
 - 커밋은 Conventional Commits 형식으로 작성한다.
+- UI 작업은 DESIGN.md의 토큰과 공용 컴포넌트만 쓴다.
 
 ### 질의
 

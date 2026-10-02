@@ -31,7 +31,7 @@
 - `src/lib/adapters/`: 외부 연동(Kakao 검색, 문서 저장소). 서버 전용.
 - `src/lib/constants/`: 표준 항목 코드(`item-codes.ts`), 예산·체크리스트 템플릿(`templates.ts`).
 - `src/lib/auth/`: 세션 서명, requireUser·requireProjectOwner 가드.
-- `src/components/`: 여러 화면에서 재쓰는 공용 UI 컴포넌트.
+- `src/components/`: 여러 화면에서 재쓰는 공용 UI 컴포넌트. 디자인 시스템 컴포넌트는 `src/components/ui/`에 두고 [UI 디자인 지침](../design/ui-design.md)을 따른다.
 - `prisma/`: `schema.prisma`, `seed.ts`, 마이그레이션 파일.
 - `scripts/`: 실행용 CLI 스크립트(참가격 CSV 임포트 등).
 - `docs/`: 지침, PRD, ERD, 로드맵 문서.
