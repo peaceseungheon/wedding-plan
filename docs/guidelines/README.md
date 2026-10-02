@@ -15,6 +15,7 @@
 | 원칙 | [코드 표준](principles/code-standards.md) | 네이밍과 주석 등 모든 코드에 공통 적용되는 코드 표준을 정의 |
 | 버전 관리 | [Git 워크플로우](version-control/git-workflow.md) | GitHub Flow 기반의 브랜치 운영과 PR, 병합 규칙을 정의 |
 | 버전 관리 | [커밋 컨벤션](version-control/commit-conventions.md) | Conventional Commits 기반 커밋 메시지 작성 규칙을 정의 |
+| 디자인 | [UI 디자인 지침](design/ui-design.md) | 화면 작업에서 DESIGN.md·PRODUCT.md를 읽고 지키고 갱신하는 규칙을 정의 |
 | 스택 | [스택 지침](stack/README.md) | 스택별 지침 문서의 현황과 스택 확정 시 생성 절차를 안내 |
 | 스택 | [스택 지침 양식](stack/_template.md) | 언어·프레임워크별 스택 지침 문서를 만들 때 쓰는 양식 |
 
