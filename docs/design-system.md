@@ -40,7 +40,7 @@
 
 ## 4. 토큰
 
-`src/app/globals.css`의 `:root`에 CSS 변수로 정의하고, `@theme inline`으로 Tailwind 유틸리티(`bg-canvas`, `text-ink-muted`, `border-line` 등)에 연결한다. 화면 코드는 Tailwind 기본 팔레트(`zinc-*`, `red-*` 등)를 직접 쓰지 않는다.
+`src/app/globals.css`의 `@theme`에 `--color-*`로 정의해 Tailwind 유틸리티(`bg-canvas`, `text-ink-muted`, `border-line` 등)로 쓴다. Tailwind가 같은 이름의 CSS 변수를 `:root`에 내보내므로 다크 테마는 이후 변수만 재정의하면 된다. 화면 코드는 Tailwind 기본 팔레트(`zinc-*`, `red-*` 등)를 직접 쓰지 않는다.
 
 ### 4.1 색
 
@@ -52,16 +52,30 @@
 | 선(강) | `line-strong` | #D9D0C3 | 표 헤더 하단, 합계 행, secondary 버튼 테두리 |
 | 글자 | `ink` | #2A2420 | 본문, 제목, 금액 |
 | 글자(보조) | `ink-muted` | #6B625A | 라벨, 보조 설명 |
-| 글자(힌트) | `ink-subtle` | #9A9087 | 캡션, 메타, 비활성 |
+| 글자(힌트) | `ink-subtle` | #787069 | 캡션, 메타, 비활성 |
 | 포인트 | `accent` | #4E6B58 딥 세이지 | primary 버튼, 활성 탭, D-Day, 브랜드 강조 |
 | 포인트(연) | `accent-soft` | #E6EEE8 | 활성 탭 배경 |
 | 양호 | `positive` / `positive-soft` | #3B6EA5 / #E6EEF7 | 예산 이내, 최저가, 계약 완료 |
-| 주의 | `caution` / `caution-soft` | #A36A14 / #FBF0DC | 예산 90% 이상, 견적 대기, 마감 임박 |
+| 주의 | `caution` / `caution-soft` | #986313 / #FBF0DC | 예산 90% 이상, 견적 대기, 마감 임박 |
 | 위험 | `negative` / `negative-soft` | #B3402F / #F9E4E0 | 예산 초과, 에러, 삭제 |
 | 정보 | `info` / `info-soft` | #6A5D8C / #EEEBF4 | 상담 예정 등 중립 상태 |
 
 - 포인트를 세이지(초록)로 정했으므로 `positive`는 초록이 아닌 **블루**로 둔다. 포인트와 "양호" 상태가 같은 색 계열이면 강조와 상태가 구분되지 않기 때문이다.
-- 글자색과 상태색은 각 배경(`surface`, `canvas`, 해당 `*-soft`) 위에서 WCAG AA 대비 4.5:1 이상을 충족해야 한다. 1단계 구현 때 대비를 측정해 미달이면 값을 조정하고 이 표를 갱신한다.
+- 글자색과 상태색은 각 배경(`surface`, `canvas`, 해당 `*-soft`) 위에서 WCAG AA 대비 4.5:1 이상을 충족해야 한다.
+- 1단계 측정(2026-10-02)에서 미달인 두 값을 AA를 넘는 가장 가까운 명도로 조정했다. `ink-subtle` #9A9087 → #787069(canvas 위 2.93 → 4.55), `caution` #A36A14 → #986313(`caution-soft` 위 4.02 → 4.50).
+
+| 조합 | 대비 |
+| --- | --- |
+| `ink` / `surface`·`canvas` | 15.31 / 14.33 |
+| `ink-muted` / `surface`·`canvas` | 5.97 / 5.58 |
+| `ink-subtle` / `surface`·`canvas` | 4.86 / 4.55 |
+| `accent` / `surface`·`canvas`·`accent-soft` | 5.89 / 5.51 / 4.98 |
+| 흰 글자 / `accent`·`negative` | 5.89 / 5.69 |
+| `positive` / `surface`·`positive-soft` | 5.30 / 4.53 |
+| `caution` / `surface`·`caution-soft` | 5.09 / 4.50 |
+| `negative` / `surface`·`negative-soft` | 5.69 / 4.66 |
+| `info` / `info-soft` | 5.01 |
+| `ink-muted` / `neutral-soft` | 5.08 |
 
 ### 4.2 타이포그래피
 
@@ -101,16 +115,16 @@
 | 컴포넌트 | 역할 | 대체하는 현재 패턴 |
 | --- | --- | --- |
 | `AppShell` | 상단 바(브랜드 + `ProjectNav`)와 콘텐츠 폭 컨테이너 | 화면별 `main` 래퍼 |
-| `ProjectNav` | 대시보드·예산·업체·견적 비교·계약·할 일·문서 탭. 현재 경로를 `accent-soft`로 표시. 모바일에서는 가로 스크롤 | 흩어진 링크 |
-| `PageHeader` | 세리프 제목, 메타 정보, 오른쪽 슬롯(D-Day·액션 버튼) | `h1 text-2xl font-semibold` |
+| `ProjectNav` | 대시보드·예산·업체·할 일·문서 탭. 현재 경로를 `accent-soft`로 표시. 모바일에서는 가로 스크롤. 견적 비교·계약은 인덱스 페이지가 없어 탭에서 제외 | 흩어진 링크 |
+| `PageHeader` | 세리프 제목, 메타 정보, 오른쪽 슬롯(D-Day·액션 버튼). 제목 위 보조 라벨(eyebrow)은 두지 않는다. 제목이 스스로 위계를 갖고, 보조 정보는 메타에 둔다 | `h1 text-2xl font-semibold` |
 | `Card` | 섹션 컨테이너. 제목과 "더보기 →" 링크 슬롯 | `section` 세로 쌓기 |
 | `Stat` | 라벨, 큰 금액, 보조 문구·배지, 선택적 `Progress` | 예산 요약 3칸 |
 | `Progress` | 비율 바. 톤은 `positive`, `caution`, `negative`, `accent`, `neutral` | 진행률 텍스트 |
 | `Badge` | 상태 표시. 톤은 `positive`, `caution`, `negative`, `info`, `neutral` | `text-red-600` 등 직접 지정 |
 | `Button` | variant는 `primary`, `secondary`, `ghost`, `danger`, size는 `md`, `sm`. `Link`로도 렌더링 가능 | `bg-zinc-900` 버튼 |
 | `Field` | Input·Select·Textarea에 라벨, 힌트, 에러 메시지를 묶는다 | 화면마다 다른 폼 스타일 |
-| `DataTable` | 숫자 열 우측 정렬, 첫 열 sticky, 합계 행 강조, 래퍼에서 가로 스크롤 | 비교표·목록 표 |
-| `Money` | 금액 표기의 단일 출처. 1만 원 이상은 `1,240만원`, 1만 원 미만은 원 단위 | 화면마다 다른 포맷 처리 |
+| `DataTable` (보류) | 파일럿에는 표가 견적 비교 하나뿐이라 클래스 규칙(숫자 우측 정렬, 첫 열 sticky, 합계 행 강조, 래퍼 가로 스크롤)만 적용했다. 3단계에서 두 번째 표를 개편할 때 컴포넌트로 추출한다 | 비교표·목록 표 |
+| `formatManwon` (`src/lib/domain/totals.ts`) | 요약 숫자용 만원 표기(`1,240만원`, `7.8만원`, 1만 원 미만은 원). 표·목록은 정확한 금액이 필요하므로 `formatKRW`로 원 단위 표기 | 화면마다 다른 포맷 처리 |
 
 **이번에 만들지 않는 것**: Modal, Toast, Tabs, 차트 라이브러리, 다크 테마. 파일럿에서 필요가 확인되면 그때 이 문서를 갱신하고 추가한다.
 
@@ -128,7 +142,9 @@
 | 견적 비교 항목별 최저가 | `positive` 글자색 | 범례로 의미 명시 |
 | 선택 옵션 항목 | `ink-subtle` 글자색 | `옵션 150만원` |
 
-90%와 ±20% 임계값은 상수 한곳에 두고 화면에서 하드코딩하지 않는다.
+임계값은 `src/lib/domain/tone.ts`의 상수 한곳에 두고 화면에서 하드코딩하지 않는다.
+
+카테고리별 예산 사용률은 대시보드 API(`budgetByCategory`)가 계획 금액만 제공해서 아직 표시할 수 없다. 파일럿 대시보드는 카테고리별 "예산 비중"을 중립 톤으로 보여주고, 예산 대비 톤은 전체 계약 총액에만 적용한다. 카테고리 사용률은 8장 미결 과제로 둔다.
 
 ## 6. 화면 개편
 
@@ -164,7 +180,7 @@
 ## 7. 검증
 
 - **원색 클래스 0건**: 3단계 이후 `grep -rE '(zinc|red|blue|green|amber)-[0-9]' src/app src/components`의 결과가 해당 단계 범위에서 0건이어야 한다.
-- **화면 QA**: TypeScript 스택 지침대로 UI는 수동 QA로 검증한다. 개편한 화면마다 데스크톱(1280px)과 모바일(360px) 스크린샷을 찍어 `docs/qa-full-flow.md`의 해당 화면 항목에 남긴다.
+- **화면 QA**: TypeScript 스택 지침대로 UI는 수동 QA로 검증한다. 개편한 화면마다 데스크톱(1280px)과 모바일(360px) 스크린샷을 `docs/design/qa/`에 `<단계>-<화면>-<폭>.png`로 남긴다.
 - **대비**: 1단계에서 4.1의 색 조합 대비를 측정해 기록한다.
 - **기존 테스트**: `npm run lint`, `npm test`, `npm run build`가 단계마다 통과해야 한다.
 
@@ -173,3 +189,4 @@
 - 다크 테마: 토큰 구조는 준비되어 있으며, 수요가 확인되면 `:root[data-theme="dark"]` 값을 정의한다.
 - 서비스명·로고: 시안의 "우리의 결혼준비"는 임시 문구다. 브랜드 작업은 별도로 기획한다.
 - 차트: 예산 추이 시각화가 필요해지면 라이브러리 도입 여부를 그때 결정한다.
+- 카테고리별 예산 사용률: 대시보드 API가 예산 카테고리별 계약·결제 금액을 내려주도록 확장한 뒤 5.1의 사용률 톤을 적용한다. 업체 범주(`WEDDING_HALL` 등)와 예산 카테고리(이름 문자열)의 매핑 규칙이 먼저 필요하다.
