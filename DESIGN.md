@@ -163,7 +163,9 @@ components:
 
 ## Colors
 
-따뜻한 종이와 호두색 잉크 위에 정원의 세이지 한 방울을 떨어뜨린 팔레트다. 모든 글자·상태색 조합은 해당 배경에서 WCAG AA(4.5:1)를 넘는다.
+따뜻한 종이와 호두색 잉크 위에 정원의 세이지 한 방울을 떨어뜨린 팔레트다.
+
+토큰은 `src/app/globals.css`의 `@theme`에 `--color-<토큰>`으로 정의되어 Tailwind 유틸리티(`bg-canvas`, `text-ink-muted`, `border-line` 등)로 쓴다. Tailwind가 같은 이름의 CSS 변수를 `:root`에 내보내므로 다크 테마는 이후 변수만 재정의하면 된다. 아래 괄호 속 이름이 토큰 이름이고, 값은 이 문서 frontmatter가 기준이다.
 
 ### Primary
 - **Deep Garden Sage** (`accent`): primary 버튼, 활성 탭, D-Day, 브랜드명의 강조 단어. 화면마다 손에 꼽을 만큼만 쓴다.
@@ -171,8 +173,8 @@ components:
 
 ### Secondary
 상태 전용 색이다. 각 색에는 같은 계열의 옅은 바탕(`*-soft`)이 짝으로 있고, 배지는 이 둘을 함께 쓴다.
-- **Ledger Blue** (`positive` / `positive-soft`): 예산 이내, 항목별 최저가, 최저 총액, 지역 평균 이하. 포인트가 초록이라 "양호"를 일부러 파랑으로 두었다.
-- **Amber Seal** (`caution` / `caution-soft`): 예산 90% 이상, 지역 평균 대비 +20% 이하, 마감 임박.
+- **Ledger Blue** (`positive` / `positive-soft`): 예산 이내, 항목별 최저가, 최저 총액, 지역 평균 이하, 계약 완료. 포인트가 초록이라 "양호"를 일부러 파랑으로 두었다. 포인트와 "양호"가 같은 색 계열이면 강조와 상태가 구분되지 않는다.
+- **Amber Seal** (`caution` / `caution-soft`): 예산 90% 이상, 지역 평균 대비 +20% 이하, 견적 대기, 마감 임박.
 - **Brick Red** (`negative` / `negative-soft`): 예산 초과, 지역 평균 대비 +20% 초과, 에러, 삭제.
 - **Dusk Violet** (`info` / `info-soft`): 상담 예정 같은 중립 상태.
 
@@ -183,8 +185,43 @@ components:
 - **Total Rule** (`line-strong`): 표 헤더 하단, 합계 행 상단, secondary 버튼과 입력창 테두리. 장부의 합계선처럼 한 단계 진하다.
 - **Walnut Ink** (`ink`): 본문, 제목, 금액.
 - **Faded Walnut** (`ink-muted`): 라벨, 보조 설명, 표의 항목명.
-- **Pencil Note** (`ink-subtle`): 캡션, 메타, 날짜 보조 정보.
+- **Pencil Note** (`ink-subtle`): 캡션, 메타, 날짜 보조 정보, 비활성.
 - **Linen** (`neutral-soft`): 중립 배지("미정", "없음") 바탕, ghost 버튼 hover.
+
+### Contrast
+글자색과 상태색은 각 배경(`surface`, `canvas`, 해당 `*-soft`) 위에서 WCAG AA(4.5:1) 이상이어야 한다. 새 색이나 새 조합을 추가하면 측정해서 이 표에 더한다. 2026-10-02 측정에서 미달이던 두 값을 AA를 넘는 가장 가까운 명도로 조정했다(`ink-subtle` #9A9087 → #787069, `caution` #A36A14 → #986313).
+
+| 조합 | 대비 |
+| --- | --- |
+| `ink` / `surface`·`canvas` | 15.31 / 14.33 |
+| `ink-muted` / `surface`·`canvas` | 5.97 / 5.58 |
+| `ink-subtle` / `surface`·`canvas` | 4.86 / 4.55 |
+| `accent` / `surface`·`canvas`·`accent-soft` | 5.89 / 5.51 / 4.98 |
+| 흰 글자 / `accent`·`negative` | 5.89 / 5.69 |
+| `positive` / `surface`·`positive-soft` | 5.30 / 4.53 |
+| `caution` / `surface`·`caution-soft` | 5.09 / 4.50 |
+| `negative` / `surface`·`negative-soft` | 5.69 / 4.66 |
+| `info` / `info-soft` | 5.01 |
+| `ink-muted` / `neutral-soft` | 5.08 |
+
+### Status Tone Mapping
+도메인 상태를 톤으로 바꾸는 규칙이다. 판정 함수와 임계값은 `src/lib/domain/tone.ts`(`budgetTone`, `benchmarkTone`, `lowestQuoteIds`, `BUDGET_CAUTION_RATIO`, `BENCHMARK_NEGATIVE_PERCENT`) 한곳에 있고, 화면에서 임계값을 하드코딩하지 않는다.
+
+| 도메인 상태 | 톤 | 표기 |
+| --- | --- | --- |
+| 예산 사용률 < 90% | `positive` | `✓ 남은 예산 970만원`, `64%` |
+| 예산 사용률 90–100% | `caution` | `! 예산의 98%` |
+| 예산 사용률 > 100% | `negative` | `▲ 120만원 초과`, `▲ 112%` |
+| 계획 금액 없음 | `neutral` | `미정` |
+| 지역 평균 대비 ≤ 0% | `positive` | `평균 대비 -8.0%` |
+| 지역 평균 대비 0% 초과 ~ +20% | `caution` | `평균 대비 +4.0%` |
+| 지역 평균 대비 > +20% | `negative` | `평균 대비 +61.0%` |
+| 견적 비교 항목별 최저가 | `positive` 글자색, 굵게 | 범례로 의미 명시 |
+| 견적에 없는 항목 | `neutral` | `없음` |
+| 선택 옵션 항목 | `ink-subtle` 글자색 | `옵션 150만원` |
+
+- 예산 대비 톤은 현재 대시보드의 전체 계약 총액에만 적용된다. 카테고리별 사용률은 API 확장 후 적용한다(Rollout의 미결 과제 참고).
+- 선택 옵션 표기는 비교 API가 항목의 옵션 여부를 내려주지 않아 아직 적용되지 않았다.
 
 ### Named Rules
 **The One Sage Rule.** 포인트 컬러는 주요 액션 하나와 현재 위치 표시에만 쓴다. 강조가 필요하면 굵기와 크기로 해결한다.
@@ -196,7 +233,9 @@ components:
 ## Typography
 
 **Display Font:** Noto Serif KR 500·600 (with serif)
-**Body Font:** Pretendard Variable (with system-ui, sans-serif). 저장소에 포함해 로드한다.
+**Body Font:** Pretendard Variable (with system-ui, sans-serif)
+
+두 서체 모두 `src/app/layout.tsx`에서 `next/font`로 로드해 `--font-sans`, `--font-serif`(Tailwind `font-sans`, `font-serif`)에 연결한다. Pretendard는 `src/app/fonts/`에 포함한 파일을 `next/font/local`로 읽는다. Noto Serif KR은 `next/font/google`이며, 한글 글리프를 subset으로 고를 수 없어 preload하지 않는다. Geist처럼 한글 글리프가 없는 서체는 쓰지 않는다.
 
 **Character:** 세리프는 장부 표지의 제목처럼 격식을 더하고, Pretendard는 본문과 숫자를 담백하고 또렷하게 읽히게 한다. 두 서체의 대비가 "감성은 정해진 자리에만"을 글자로 보여준다.
 
@@ -243,7 +282,24 @@ components:
 
 ## Components
 
-컴포넌트는 절제되고 단정하다. 상태 변화는 색과 바탕만 바뀌고, 크기나 위치는 움직이지 않는다. 위치는 `src/components/ui/`다.
+컴포넌트는 절제되고 단정하다. 상태 변화는 색과 바탕만 바뀌고, 크기나 위치는 움직이지 않는다. UI 라이브러리 없이 직접 구현하며, 위치는 `src/components/ui/`다.
+
+### Catalog
+| 컴포넌트 | 파일 | API 요약 |
+| --- | --- | --- |
+| `AppShell` | `app-shell.tsx` | 상단 바(브랜드 + `nav` 슬롯). 프로젝트 하위 화면은 `src/app/projects/[id]/layout.tsx`가 감싼다 |
+| `ProjectNav` | `project-nav.tsx` | 대시보드·예산·업체·할 일·문서 탭. 견적 비교·계약은 인덱스 페이지가 없어 탭에서 제외 |
+| `PageHeader` | `page-header.tsx` | `title`, `meta`, `aside`(D-Day·액션 버튼) |
+| `Card`, `CardLink` | `card.tsx` | `title`, `action` 슬롯. `CardLink`는 "더보기 →" 링크 |
+| `Stat` | `stat.tsx` | `label`, `value`, children(배지·보조 문구·`Progress`) |
+| `Progress` | `progress.tsx` | `value`(0–1), `tone`(Status 톤 + `accent`), `label`(접근성 라벨, 필수) |
+| `Badge` | `badge.tsx` | `tone`(`positive`, `caution`, `negative`, `info`, `neutral`) |
+| `Button`, `buttonClass` | `button.tsx` | `variant`(`primary`, `secondary`, `ghost`, `danger`), `size`(`md`, `sm`). 링크를 버튼 모양으로 그릴 때는 `buttonClass` |
+| `Field`, `inputClass` | `field.tsx` | `label`, `hint`. input·select에는 `inputClass` |
+
+금액 표기는 컴포넌트가 아니라 `src/lib/domain/totals.ts`의 함수다. 요약 숫자는 `formatManwon`(`1,240만원`, `7.8만원`, 1만 원 미만은 원), 표·목록은 `formatKRW`(원 단위 정확 표기)를 쓴다.
+
+아직 만들지 않은 것: `DataTable`(두 번째 표를 개편할 때 견적 비교 표의 클래스 규칙에서 추출), Modal, Toast, Tabs, 차트. 필요가 확인되면 만들고 이 문서에 추가한다.
 
 ### Buttons
 - **Shape:** 컨트롤 모서리(8px), 높이 40px(md) 또는 32px(sm), 글자 600.
@@ -308,3 +364,21 @@ components:
 - **Don't** 카드 그림자를 키우거나 카드 안에 카드를 겹치지 않는다.
 - **Don't** 한쪽에만 두꺼운 색 테두리를 두는 강조 카드나 알림을 만들지 않는다.
 - **Don't** 다크 테마 값을 화면에서 임의로 정의하지 않는다. 필요해지면 토큰을 재정의한다.
+
+## Rollout
+
+화면 개편은 파일럿에서 시스템을 검증한 뒤 나머지 화면으로 넓힌다. 단계마다 PR 하나를 기본으로 하고, 한 PR이 커지면 화면 단위로 나눈다. 최초 시안은 `docs/design/preview.html`, 1·2단계 구현 계획은 `docs/design/2026-10-02-stage1-2-plan.md`다.
+
+| 단계 | 범위 | 완료 조건 | 상태 |
+| --- | --- | --- | --- |
+| 1. 기반 | 토큰, 폰트, 공용 컴포넌트, 상단 바·탭 | 기존 화면이 깨지지 않고 빌드·린트 통과 | 완료 |
+| 2. 파일럿 | 대시보드, 견적 비교 | 시안과 동등한 결과, QA 스크린샷 | 완료 |
+| 3. 금액 화면 | 견적 상세, 예산, 계약·결제 | 범위 내 원색 클래스 0건 | 예정 |
+| 4. 관리 화면 | 업체, 할 일, 문서, 웨딩홀 조회·상세 | 범위 내 원색 클래스 0건 | 예정 |
+| 5. 진입 화면 | 홈(프로젝트 목록), 로그인 | 저장소 전체 원색 클래스 0건 | 예정 |
+
+### Open Questions
+- 다크 테마: 토큰 구조는 준비되어 있다. 수요가 확인되면 `:root[data-theme="dark"]`에 값을 정의한다.
+- 서비스명·로고: "우리의 결혼준비"는 임시 문구다. 브랜드 작업은 별도로 기획한다.
+- 차트: 예산 추이 시각화가 필요해지면 라이브러리 도입 여부를 그때 결정한다.
+- 카테고리별 예산 사용률: 대시보드 API가 예산 카테고리별 계약·결제 금액을 내려주도록 확장한 뒤 Status Tone Mapping의 사용률 톤을 적용한다. 업체 범주(`WEDDING_HALL` 등)와 예산 카테고리(이름 문자열)의 매핑 규칙이 먼저 필요하다.
