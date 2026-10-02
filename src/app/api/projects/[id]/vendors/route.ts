@@ -17,6 +17,10 @@ type StringFieldResult =
   | { readonly ok: true; readonly value: string | undefined }
   | { readonly ok: false; readonly error: string };
 
+type VendorResolution =
+  | { readonly ok: true; readonly vendor: vendors }
+  | { readonly ok: false; readonly status: 400 | 409; readonly error: string };
+
 type MemoFieldResult =
   | { readonly ok: true; readonly value: string | null | undefined }
   | { readonly ok: false; readonly error: string };
@@ -54,10 +58,10 @@ function isVendorCategory(value: string): value is VENDOR_CATEGORY {
 /**
  * kakaoPlaceId가 있으면 기존 업체를 재사용하고(@unique), 없으면 새로 만든다.
  * 수동 등록 업체는 kakaoPlaceId가 null로 남는다.
+ * 신규 kakaoPlaceId의 동시 최초등록 경합은 create의 P2002를 catch해 승자 행을
+ * 재조회해 재사용하고, 재조회마저 실패하면 409로 수렴시켜 500 누출을 막는다.
  */
-async function resolveVendor(
-  input: VendorInput,
-): Promise<{ ok: true; vendor: vendors } | { ok: false; error: string }> {
+async function resolveVendor(input: VendorInput): Promise<VendorResolution> {
   if (input.kakaoPlaceId !== undefined) {
     const existing = await prisma.vendors.findUnique({ where: { kakaoPlaceId: input.kakaoPlaceId } });
     if (existing !== null) return { ok: true, vendor: existing };
@@ -65,30 +69,39 @@ async function resolveVendor(
     if (placeName === undefined || category === undefined) {
       return {
         ok: false,
+        status: 400,
         error: "등록되지 않은 카카오 장소입니다. placeName과 category를 함께 입력하세요.",
       };
     }
     if (!isVendorCategory(category)) {
-      return { ok: false, error: "올바른 category가 아닙니다." };
+      return { ok: false, status: 400, error: "올바른 category가 아닙니다." };
     }
-    const created = await prisma.vendors.create({
-      data: {
-        kakaoPlaceId: input.kakaoPlaceId,
-        name: placeName.trim(),
-        category,
-        address: input.address ?? null,
-        phone: input.phone ?? null,
-      },
-    });
-    return { ok: true, vendor: created };
+    try {
+      const created = await prisma.vendors.create({
+        data: {
+          kakaoPlaceId: input.kakaoPlaceId,
+          name: placeName.trim(),
+          category,
+          address: input.address ?? null,
+          phone: input.phone ?? null,
+        },
+      });
+      return { ok: true, vendor: created };
+    } catch (error) {
+      // 위반 가능한 유니크는 kakaoPlaceId뿐이므로 P2002면 경합에서 진 것이다.
+      if (!isUniqueViolation(error)) throw error;
+      const raced = await prisma.vendors.findUnique({ where: { kakaoPlaceId: input.kakaoPlaceId } });
+      if (raced !== null) return { ok: true, vendor: raced };
+      return { ok: false, status: 409, error: "이미 등록된 업체입니다." };
+    }
   }
 
   const { placeName, address, category } = input;
   if (placeName === undefined || address === undefined || category === undefined) {
-    return { ok: false, error: "placeName, address, category를 입력하세요." };
+    return { ok: false, status: 400, error: "placeName, address, category를 입력하세요." };
   }
   if (!isVendorCategory(category)) {
-    return { ok: false, error: "올바른 category가 아닙니다." };
+    return { ok: false, status: 400, error: "올바른 category가 아닙니다." };
   }
   const created = await prisma.vendors.create({
     data: {
@@ -164,7 +177,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     category: category.value,
     phone: phone.value,
   });
-  if (!resolved.ok) return badRequest(resolved.error);
+  if (!resolved.ok) return NextResponse.json({ error: resolved.error }, { status: resolved.status });
 
   try {
     // status/isFavorite은 스키마 기본값(CANDIDATE/false)에 맡긴다.

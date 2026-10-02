@@ -125,7 +125,11 @@ export async function POST(req: Request, ctx: RouteContext): Promise<NextRespons
     return NextResponse.json({ error: "파일 이름은 190자 이하여야 합니다." }, { status: 400 });
   }
 
-  // 디스크에 쓰기 전에 크기를 검사한다.
+  // arrayBuffer()는 업로드 전체를 메모리에 버퍼링하므로 File.size로 먼저 거른다.
+  if (file.size > MAX_SIZE_BYTES) {
+    return NextResponse.json({ error: "파일 크기는 10MB 이하여야 합니다." }, { status: 413 });
+  }
+  // 디스크에 쓰기 전에 크기를 검사한다. file.size와 실제 바이트 수가 어긋나는 경우의 안전망.
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (bytes.byteLength > MAX_SIZE_BYTES) {
     return NextResponse.json({ error: "파일 크기는 10MB 이하여야 합니다." }, { status: 413 });
