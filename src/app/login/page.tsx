@@ -2,6 +2,11 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { AppShell } from "@/components/ui/app-shell";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Field, inputClass } from "@/components/ui/field";
+import { PageHeader } from "@/components/ui/page-header";
 
 type ApiResult = { readonly ok: boolean; readonly status: number; readonly body: unknown };
 
@@ -55,77 +60,78 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-16">
-      <h1 className="text-2xl font-semibold">{mode === "login" ? "로그인" : "회원가입"}</h1>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded border border-zinc-200 p-4">
-        {mode === "signup" && (
-          <label className="flex flex-col gap-1 text-sm">
-            이름
-            <input
-              required
-              className="rounded border border-zinc-300 px-3 py-2"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
-          </label>
-        )}
-        <label className="flex flex-col gap-1 text-sm">
-          이메일
-          <input
-            required
-            type="email"
-            autoComplete="email"
-            className="rounded border border-zinc-300 px-3 py-2"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          비밀번호
-          <input
-            required
-            type="password"
-            minLength={8}
-            autoComplete={mode === "login" ? "current-password" : "new-password"}
-            className="rounded border border-zinc-300 px-3 py-2"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-        </label>
-        {error !== null && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-50"
-        >
-          {mode === "login" ? "로그인" : "회원가입"}
-        </button>
-      </form>
-      <p className="text-sm text-zinc-600">
-        {mode === "login" ? (
-          <>
-            계정이 없으신가요?{" "}
-            <button
-              type="button"
-              onClick={() => switchMode("signup")}
-              className="text-blue-600 underline"
-            >
-              회원가입
-            </button>
-          </>
-        ) : (
-          <>
-            이미 계정이 있으신가요?{" "}
-            <button
-              type="button"
-              onClick={() => switchMode("login")}
-              className="text-blue-600 underline"
-            >
-              로그인
-            </button>
-          </>
-        )}
-      </p>
-    </main>
+    <AppShell>
+      <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-16">
+        <PageHeader title={mode === "login" ? "로그인" : "회원가입"} />
+        <Card>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {mode === "signup" && (
+              <Field label="이름">
+                <input
+                  required
+                  className={inputClass}
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                />
+              </Field>
+            )}
+            <Field label="이메일">
+              <input
+                required
+                type="email"
+                autoComplete="email"
+                className={inputClass}
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </Field>
+            <Field label="비밀번호">
+              <input
+                required
+                type="password"
+                minLength={8}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                className={inputClass}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </Field>
+            {error !== null && (
+              <p role="alert" className="text-sm text-negative">
+                {error}
+              </p>
+            )}
+            <Button type="submit" disabled={pending} className="w-full">
+              {mode === "login" ? "로그인" : "회원가입"}
+            </Button>
+          </form>
+        </Card>
+        <p className="text-center text-sm text-ink-muted">
+          {mode === "login" ? (
+            <>
+              계정이 없으신가요?{" "}
+              <button
+                type="button"
+                onClick={() => switchMode("signup")}
+                className="font-semibold text-ink underline underline-offset-4 hover:text-accent"
+              >
+                회원가입
+              </button>
+            </>
+          ) : (
+            <>
+              이미 계정이 있으신가요?{" "}
+              <button
+                type="button"
+                onClick={() => switchMode("login")}
+                className="font-semibold text-ink underline underline-offset-4 hover:text-accent"
+              >
+                로그인
+              </button>
+            </>
+          )}
+        </p>
+      </main>
+    </AppShell>
   );
 }

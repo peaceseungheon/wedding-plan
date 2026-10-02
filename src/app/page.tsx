@@ -4,6 +4,11 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { REGION_OPTIONS } from "@/lib/constants/regions";
+import { AppShell } from "@/components/ui/app-shell";
+import { Button } from "@/components/ui/button";
+import { Card, CardLink } from "@/components/ui/card";
+import { Field, inputClass } from "@/components/ui/field";
+import { PageHeader } from "@/components/ui/page-header";
 
 /** 프로젝트 카드에 필요한 필드만. weddingDate는 ISO 문자열 또는 null. */
 type ProjectRow = {
@@ -11,6 +16,7 @@ type ProjectRow = {
   readonly title: string;
   readonly weddingDate: string | null;
   readonly region: string | null;
+  readonly guestCount: number | null;
 };
 
 type ApiResult = { readonly ok: boolean; readonly status: number; readonly body: unknown };
@@ -42,15 +48,30 @@ function parseProjects(body: unknown): readonly ProjectRow[] | null {
     if (typeof title !== "string") return [];
     const weddingDate = "weddingDate" in item ? item.weddingDate : undefined;
     const region = "region" in item ? item.region : undefined;
+    const guestCount = "guestCount" in item ? item.guestCount : undefined;
     return [
       {
         id,
         title,
         weddingDate: typeof weddingDate === "string" ? weddingDate : null,
         region: typeof region === "string" ? region : null,
+        guestCount: typeof guestCount === "number" ? guestCount : null,
       },
     ];
   });
+}
+
+/** 대시보드의 ProjectMeta와 같은 구성(날짜 · 지역 · 하객) — 항목이 없으면 "미정"으로 채운다. */
+function ProjectRowMeta({ row }: { row: ProjectRow }) {
+  return (
+    <>
+      <span className="tabular-nums">
+        {row.weddingDate === null ? "예식일 미정" : `예식일 ${row.weddingDate.slice(0, 10)}`}
+      </span>
+      <span>{row.region ?? "지역 미정"}</span>
+      <span className="tabular-nums">{row.guestCount === null ? "하객 미정" : `하객 ${row.guestCount}명`}</span>
+    </>
+  );
 }
 
 type CreateForm = { readonly title: string; readonly weddingDate: string; readonly region: string; readonly guestCount: string };
@@ -133,96 +154,95 @@ export default function HomePage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold">내 결혼준비 프로젝트</h1>
-        <Link href="/wedding-halls" className="text-sm text-zinc-600 underline-offset-4 hover:underline">
-          예식장 공개자료 조회 →
-        </Link>
-      </div>
+    <AppShell>
+      <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-4 pt-8 pb-16">
+        <PageHeader
+          title="내 결혼준비 프로젝트"
+          aside={<CardLink href="/wedding-halls">예식장 공개자료 조회</CardLink>}
+        />
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">새 프로젝트 만들기</h2>
-        <form onSubmit={handleCreate} className="flex flex-col gap-2 rounded border border-zinc-200 p-3">
-          <label className="flex flex-col gap-1 text-sm">
-            프로젝트 이름
-            <input
-              required
-              className="rounded border border-zinc-300 px-3 py-2"
-              value={form.title}
-              onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
-            />
-          </label>
-          <div className="flex flex-wrap gap-2">
-            <label className="flex flex-1 flex-col gap-1 text-sm">
-              예식일 (선택)
-              <input
-                type="date"
-                className="rounded border border-zinc-300 px-3 py-2"
-                value={form.weddingDate}
-                onChange={(event) => setForm((prev) => ({ ...prev, weddingDate: event.target.value }))}
-              />
-            </label>
-            <label className="flex flex-1 flex-col gap-1 text-sm">
-              지역 (선택)
-              <select
-                className="rounded border border-zinc-300 px-3 py-2"
-                value={form.region}
-                onChange={(event) => setForm((prev) => ({ ...prev, region: event.target.value }))}
-              >
-                <option value="">미지정</option>
-                {REGION_OPTIONS.map((region) => (
-                  <option key={region} value={region}>
-                    {region}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex w-32 flex-col gap-1 text-sm">
-              하객 인원 (선택)
-              <input
-                type="number"
-                className="rounded border border-zinc-300 px-3 py-2"
-                value={form.guestCount}
-                onChange={(event) => setForm((prev) => ({ ...prev, guestCount: event.target.value }))}
-              />
-            </label>
-          </div>
-          {createError !== null && <p className="text-sm text-red-600">{createError}</p>}
-          <button
-            type="submit"
-            disabled={creating}
-            className="self-start rounded bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-50"
-          >
-            생성
-          </button>
-        </form>
-      </section>
+        {/* 프로젝트 행은 카드 모양이지만 바깥을 Card로 한 번 더 감싸지 않는다(카드 중첩 금지). */}
+        <section className="flex flex-col gap-3">
+          <h2 className="text-base font-semibold">프로젝트 목록</h2>
+          {projects === null && listError === null && <p className="text-sm text-ink-muted">불러오는 중...</p>}
+          {listError !== null && (
+            <p role="alert" className="text-sm text-negative">
+              {listError}
+            </p>
+          )}
+          {projects !== null && projects.length === 0 && listError === null && (
+            <p className="text-sm text-ink-muted">아직 프로젝트가 없습니다. 아래에서 첫 프로젝트를 만들어 보세요.</p>
+          )}
+          <ul className="flex flex-col gap-3 sm:gap-4">
+            {(projects ?? []).map((row) => (
+              <li key={row.id}>
+                <Link
+                  href={`/projects/${row.id}`}
+                  className="flex flex-col gap-1 rounded-xl border border-line bg-surface p-5 shadow-[0_1px_2px_rgb(42_36_32/0.04)] transition-colors hover:border-line-strong"
+                >
+                  <span className="font-semibold">{row.title}</span>
+                  <span className="flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-ink-muted">
+                    <ProjectRowMeta row={row} />
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">프로젝트 목록</h2>
-        {projects === null && listError === null && <p className="text-sm text-zinc-600">불러오는 중...</p>}
-        {listError !== null && <p className="text-sm text-red-600">{listError}</p>}
-        {projects !== null && projects.length === 0 && listError === null && (
-          <p className="text-sm text-zinc-600">아직 프로젝트가 없습니다. 위에서 첫 프로젝트를 만들어 보세요.</p>
-        )}
-        <ul className="flex flex-col gap-2">
-          {(projects ?? []).map((row) => (
-            <li key={row.id}>
-              <Link
-                href={`/projects/${row.id}`}
-                className="flex flex-col gap-1 rounded border border-zinc-200 p-3 hover:border-zinc-400"
-              >
-                <span className="font-medium">{row.title}</span>
-                <span className="text-sm text-zinc-600">
-                  {row.weddingDate !== null ? `예식일 ${row.weddingDate.slice(0, 10)}` : "예식일 미정"}
-                  {row.region !== null ? ` · ${row.region}` : ""}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </main>
+        <Card title="새 프로젝트 만들기">
+          <form onSubmit={handleCreate} className="flex flex-col gap-4">
+            <Field label="프로젝트 이름">
+              <input
+                required
+                className={inputClass}
+                value={form.title}
+                onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
+              />
+            </Field>
+            <div className="grid gap-4 sm:grid-cols-[1fr_1fr_8rem]">
+              <Field label="예식일" hint="비우면 미정">
+                <input
+                  type="date"
+                  className={inputClass}
+                  value={form.weddingDate}
+                  onChange={(event) => setForm((prev) => ({ ...prev, weddingDate: event.target.value }))}
+                />
+              </Field>
+              <Field label="지역" hint="비우면 미지정">
+                <select
+                  className={inputClass}
+                  value={form.region}
+                  onChange={(event) => setForm((prev) => ({ ...prev, region: event.target.value }))}
+                >
+                  <option value="">미지정</option>
+                  {REGION_OPTIONS.map((region) => (
+                    <option key={region} value={region}>
+                      {region}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="하객 인원" hint="비우면 미정">
+                <input
+                  type="number"
+                  className={inputClass}
+                  value={form.guestCount}
+                  onChange={(event) => setForm((prev) => ({ ...prev, guestCount: event.target.value }))}
+                />
+              </Field>
+            </div>
+            {createError !== null && (
+              <p role="alert" className="text-sm text-negative">
+                {createError}
+              </p>
+            )}
+            <Button type="submit" disabled={creating} className="self-start">
+              생성
+            </Button>
+          </form>
+        </Card>
+      </main>
+    </AppShell>
   );
 }

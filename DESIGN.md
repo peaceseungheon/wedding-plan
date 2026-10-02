@@ -296,10 +296,11 @@ components:
 | `Badge` | `badge.tsx` | `tone`(`positive`, `caution`, `negative`, `info`, `neutral`) |
 | `Button`, `buttonClass` | `button.tsx` | `variant`(`primary`, `secondary`, `ghost`, `danger`), `size`(`md`, `sm`). 링크를 버튼 모양으로 그릴 때는 `buttonClass` |
 | `Field`, `inputClass` | `field.tsx` | `label`, `hint`. input·select에는 `inputClass` |
+| `DataTable`, 표 클래스 | `table.tsx` | `minWidth`(가로 스크롤 기준 폭). 셀·행은 `thClass`, `tdClass`, `numClass`, `headRowClass`, `rowClass`, `totalRowClass`, `stickyCellClass` |
 
 금액 표기는 컴포넌트가 아니라 `src/lib/domain/totals.ts`의 함수다. 요약 숫자는 `formatManwon`(`1,240만원`, `7.8만원`, 1만 원 미만은 원), 표·목록은 `formatKRW`(원 단위 정확 표기)를 쓴다.
 
-아직 만들지 않은 것: `DataTable`(두 번째 표를 개편할 때 견적 비교 표의 클래스 규칙에서 추출), Modal, Toast, Tabs, 차트. 필요가 확인되면 만들고 이 문서에 추가한다.
+아직 만들지 않은 것: Modal, Toast, Tabs, 차트. 필요가 확인되면 만들고 이 문서에 추가한다.
 
 ### Buttons
 - **Shape:** 컨트롤 모서리(8px), 높이 40px(md) 또는 32px(sm), 글자 600.
@@ -373,9 +374,9 @@ components:
 | --- | --- | --- | --- |
 | 1. 기반 | 토큰, 폰트, 공용 컴포넌트, 상단 바·탭 | 기존 화면이 깨지지 않고 빌드·린트 통과 | 완료 |
 | 2. 파일럿 | 대시보드, 견적 비교 | 시안과 동등한 결과, QA 스크린샷 | 완료 |
-| 3. 금액 화면 | 견적 상세, 예산, 계약·결제 | 범위 내 원색 클래스 0건 | 예정 |
-| 4. 관리 화면 | 업체, 할 일, 문서, 웨딩홀 조회·상세 | 범위 내 원색 클래스 0건 | 예정 |
-| 5. 진입 화면 | 홈(프로젝트 목록), 로그인 | 저장소 전체 원색 클래스 0건 | 예정 |
+| 3. 금액 화면 | 견적 상세, 예산, 계약·결제 | 범위 내 원색 클래스 0건 | 완료 |
+| 4. 관리 화면 | 업체, 할 일, 문서, 웨딩홀 조회·상세 | 범위 내 원색 클래스 0건 | 완료 |
+| 5. 진입 화면 | 홈(프로젝트 목록), 로그인 | 저장소 전체 원색 클래스 0건 | 완료 |
 
 ### Open Questions
 - 다크 테마: 토큰 구조는 준비되어 있다. 수요가 확인되면 `:root[data-theme="dark"]`에 값을 정의한다.
