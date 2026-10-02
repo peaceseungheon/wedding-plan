@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>디자인 시안 — 대시보드</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --canvas: #FAF7F2; --surface: #FFFFFF;
+    --line: #ECE6DD; --line-strong: #D9D0C3;
+    --ink: #2A2420; --ink-muted: #6B625A; --ink-subtle: #9A9087;
+    --accent: #4E6B58; --accent-soft: #E6EEE8; --accent-ink: #FFFFFF;
+    --positive: #3B6EA5; --positive-soft: #E6EEF7;
+    --caution: #A36A14; --caution-soft: #FBF0DC;
+    --negative: #B3402F; --negative-soft: #F9E4E0;
+    --info: #6A5D8C; --info-soft: #EEEBF4;
+  }
+  [data-accent="rose"]  { --accent: #A8574F; --accent-soft: #F5E6E3; }
+  [data-accent="navy"]  { --accent: #2F3E5C; --accent-soft: #E4E8F0; }
+
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--canvas); color: var(--ink); font: 15px/1.55 "Pretendard Variable", Pretendard, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .serif { font-family: "Noto Serif KR", serif; }
+
+  /* 시안 컨트롤 (실제 UI 아님) */
+  .switcher { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; background: #2A2420; color: #fff; font-size: 13px; }
+  .switcher button { border: 1px solid #ffffff40; background: transparent; color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font: inherit; }
+  .switcher button[aria-pressed="true"] { background: #fff; color: #2A2420; }
+  .switcher .sep { width: 1px; height: 18px; background: #ffffff40; margin: 0 4px; }
+
+  /* 상단 내비 */
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--line); }
+  .topbar-inner { max-width: 1080px; margin: 0 auto; padding: 0 16px; display: flex; align-items: center; gap: 24px; height: 56px; }
+  .brand { font-family: "Noto Serif KR", serif; font-weight: 600; font-size: 17px; white-space: nowrap; }
+  .brand span { color: var(--accent); }
+  .tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; flex: 1; }
+  .tabs a { padding: 6px 12px; border-radius: 8px; color: var(--ink-muted); text-decoration: none; font-size: 14px; white-space: nowrap; }
+  .tabs a.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+  main { max-width: 1080px; margin: 0 auto; padding: 32px 16px 64px; display: flex; flex-direction: column; gap: 32px; }
+
+  /* 헤더 */
+  .hero { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px; }
+  .eyebrow { font-size: 13px; color: var(--ink-subtle); }
+  h1 { font-family: "Noto Serif KR", serif; font-weight: 600; font-size: 28px; letter-spacing: -0.01em; margin-top: 4px; }
+  .meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 13px; color: var(--ink-muted); }
+  .dday { text-align: right; }
+  .dday .label { font-size: 12px; color: var(--ink-subtle); }
+  .dday .value { font-family: "Noto Serif KR", serif; font-size: 44px; line-height: 1; color: var(--accent); font-weight: 600; }
+
+  /* 카드 */
+  .grid { display: grid; gap: 16px; }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g2 { grid-template-columns: 1.4fr 1fr; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; box-shadow: 0 1px 2px #2a24200a; }
+  .card h2 { font-size: 16px; font-weight: 600; display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+  .card h2 a { font-size: 13px; font-weight: 500; color: var(--ink-muted); text-decoration: none; }
+  .card h2 a:hover { color: var(--accent); }
+
+  .stat .k { font-size: 13px; color: var(--ink-muted); }
+  .stat .v { font-size: 26px; font-weight: 700; margin-top: 4px; letter-spacing: -0.02em; }
+  .stat .v small { font-size: 15px; font-weight: 500; color: var(--ink-muted); margin-left: 2px; }
+  .stat .d { font-size: 13px; margin-top: 6px; }
+
+  .bar { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; margin-top: 12px; }
+  .bar i { display: block; height: 100%; border-radius: 99px; }
+
+  .row { display: grid; grid-template-columns: 90px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .row:first-of-type { border-top: 0; padding-top: 0; }
+  .row .bar { margin: 0; height: 6px; }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+  .b-pos { background: var(--positive-soft); color: var(--positive); }
+  .b-cau { background: var(--caution-soft); color: var(--caution); }
+  .b-neg { background: var(--negative-soft); color: var(--negative); }
+  .b-info { background: var(--info-soft); color: var(--info); }
+  .b-neutral { background: #F1ECE5; color: var(--ink-muted); }
+
+  .list { list-style: none; padding: 0; display: flex; flex-direction: column; }
+  .list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .list li:first-child { border-top: 0; padding-top: 0; }
+  .list .sub { font-size: 12px; color: var(--ink-subtle); }
+  .date { min-width: 44px; text-align: center; border: 1px solid var(--line); border-radius: 8px; padding: 4px 0; line-height: 1.2; }
+  .date b { display: block; font-size: 16px; }
+  .date span { font-size: 11px; color: var(--ink-subtle); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 16px; border-radius: 8px; font: 600 14px "Pretendard Variable", sans-serif; cursor: pointer; border: 1px solid transparent; }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-secondary { background: var(--surface); border-color: var(--line-strong); color: var(--ink); }
+
+  /* 비교표 */
+  .table-wrap { overflow-x: auto; margin: 0 -20px; padding: 0 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 560px; }
+  th, td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--surface); color: var(--ink-muted); }
+  thead th { font-size: 13px; font-weight: 600; color: var(--ink); border-bottom: 1px solid var(--line-strong); }
+  tfoot td { font-weight: 700; font-size: 15px; border-bottom: 0; border-top: 1px solid var(--line-strong); }
+  td.best { color: var(--positive); font-weight: 600; }
+  td.opt { color: var(--ink-subtle); }
+  .legend { display: flex; gap: 12px; font-size: 12px; color: var(--ink-subtle); margin-top: 12px; flex-wrap: wrap; }
+
+  .section-title { font-size: 18px; font-weight: 600; margin-bottom: 12px; }
+  .note { font-size: 12px; color: var(--ink-subtle); text-align: center; }
+
+  @media (max-width: 760px) {
+    .g3, .g2 { grid-template-columns: 1fr; }
+    .g3 { gap: 12px; }
+    h1 { font-size: 24px; }
+    .dday .value { font-size: 36px; }
+    .stat .v { font-size: 22px; }
+    .brand { font-size: 15px; }
+    .topbar-inner { gap: 12px; }
+  }
+  .frame-mobile main, .frame-mobile .topbar-inner { max-width: 390px; }
+  .frame-mobile .page { max-width: 390px; margin: 24px auto; border: 8px solid #2A2420; border-radius: 32px; overflow: hidden; background: var(--canvas); }
+  .frame-mobile .g3, .frame-mobile .g2 { grid-template-columns: 1fr; }
+  .frame-mobile h1 { font-size: 24px; }
+  .frame-mobile .dday .value { font-size: 36px; }
+</style>
+</head>
+<body>
+
+<div class="switcher" role="toolbar" aria-label="시안 옵션">
+  <strong>시안 옵션</strong>
+  <span>포인트 컬러</span>
+  <button data-set-accent="rose" aria-pressed="false">로즈우드</button>
+  <button data-set-accent="sage" aria-pressed="true">딥 세이지</button>
+  <button data-set-accent="navy" aria-pressed="false">잉크 네이비</button>
+  <span class="sep"></span>
+  <button id="frame" aria-pressed="false">모바일 프레임</button>
+</div>
+
+<div class="page">
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">우리의 <span>결혼준비</span></div>
+    <nav class="tabs" aria-label="프로젝트 메뉴">
+      <a class="on" href="#">대시보드</a><a href="#">예산</a><a href="#">업체</a><a href="#">견적 비교</a><a href="#">계약</a><a href="#">할 일</a><a href="#">문서</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div>
+      <div class="eyebrow">결혼 준비 프로젝트</div>
+      <h1>지수 ♥ 민호의 봄날</h1>
+      <div class="meta"><span>2027. 4. 17 (토)</span><span>·</span><span>서울 강남</span><span>·</span><span>하객 220명</span></div>
+    </div>
+    <div class="dday"><div class="label">예식까지</div><div class="value num">D-197</div></div>
+  </section>
+
+  <section class="grid g3" aria-label="예산 요약">
+    <div class="card stat">
+      <div class="k">목표 예산</div>
+      <div class="v num">4,500<small>만원</small></div>
+      <div class="d" style="color:var(--ink-subtle)">카테고리 8개</div>
+    </div>
+    <div class="card stat">
+      <div class="k">예상 총액</div>
+      <div class="v num">4,180<small>만원</small></div>
+      <div class="d"><span class="badge b-pos">✓ 예산 이내 320만원</span></div>
+      <div class="bar"><i style="width:93%;background:var(--positive)"></i></div>
+    </div>
+    <div class="card stat">
+      <div class="k">결제 완료</div>
+      <div class="v num">1,240<small>만원</small></div>
+      <div class="d" style="color:var(--ink-muted)">예상 총액의 30%</div>
+      <div class="bar"><i style="width:30%;background:var(--accent)"></i></div>
+    </div>
+  </section>
+
+  <div class="grid g2">
+    <section class="card">
+      <h2>카테고리별 예산 <a href="#">예산 관리 →</a></h2>
+      <div class="row"><span>웨딩홀</span><div class="bar"><i style="width:98%;background:var(--caution)"></i></div><span class="badge b-cau">! 98%</span></div>
+      <div class="row"><span>스드메</span><div class="bar"><i style="width:112%;max-width:100%;background:var(--negative)"></i></div><span class="badge b-neg">▲ 112%</span></div>
+      <div class="row"><span>예복·예물</span><div class="bar"><i style="width:64%;background:var(--positive)"></i></div><span class="badge b-pos">64%</span></div>
+      <div class="row"><span>본식 촬영</span><div class="bar"><i style="width:40%;background:var(--positive)"></i></div><span class="badge b-pos">40%</span></div>
+      <div class="row"><span>청첩장</span><div class="bar"><i style="width:0%"></i></div><span class="badge b-neutral">미정</span></div>
+    </section>
+
+    <section class="card">
+      <h2>다가오는 결제 <a href="#">계약 →</a></h2>
+      <ul class="list">
+        <li><div style="display:flex;gap:12px;align-items:center"><div class="date num"><b>8</b><span>10월</span></div><div>더채플 중도금<div class="sub">웨딩홀 · D-6</div></div></div><b class="num">500만원</b></li>
+        <li><div style="display:flex;gap:12px;align-items:center"><div class="date num"><b>21</b><span>10월</span></div><div>스튜디오 잔금<div class="sub">스드메 · D-19</div></div></div><b class="num">180만원</b></li>
+        <li><div style="display:flex;gap:12px;align-items:center"><div class="date num"><b>3</b><span>11월</span></div><div>예물 계약금<div class="sub">예복·예물 · D-32</div></div></div><b class="num">100만원</b></li>
+      </ul>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>견적 비교 · 웨딩홀 <a href="#">전체 비교 →</a></h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>항목</th><th>더채플 청담</th><th>라움 아트센터</th><th>그랜드 하얏트</th></tr></thead>
+        <tbody>
+          <tr><td>대관료</td><td class="num">300만원</td><td class="num best">0원</td><td class="num">550만원</td></tr>
+          <tr><td>식대 (1인)</td><td class="num best">7.8만원</td><td class="num">8.5만원</td><td class="num">13만원</td></tr>
+          <tr><td>보증인원</td><td class="num">200명</td><td class="num">250명</td><td class="num">200명</td></tr>
+          <tr><td>꽃장식</td><td class="num opt">옵션 150만원</td><td class="num">포함</td><td class="num">포함</td></tr>
+          <tr><td>지역 평균 대비</td><td><span class="badge b-pos">-8%</span></td><td><span class="badge b-cau">+4%</span></td><td><span class="badge b-neg">+61%</span></td></tr>
+        </tbody>
+        <tfoot><tr><td>예상 총액</td><td class="num">2,016만원</td><td class="num">2,125만원</td><td class="num">3,410만원</td></tr></tfoot>
+      </table>
+    </div>
+    <div class="legend"><span><b style="color:var(--positive)">파랑</b> 항목별 최저가</span><span>회색 = 선택 옵션</span><span>평균: 한국소비자원 참가격</span></div>
+  </section>
+
+  <section>
+    <div class="section-title">컴포넌트 미리보기</div>
+    <div class="card" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+      <button class="btn btn-primary">견적 추가</button>
+      <button class="btn btn-secondary">취소</button>
+      <span class="badge b-pos">✓ 계약 완료</span>
+      <span class="badge b-cau">! 견적 대기</span>
+      <span class="badge b-neg">▲ 예산 초과</span>
+      <span class="badge b-info">상담 예정</span>
+      <span class="badge b-neutral">후보</span>
+    </div>
+  </section>
+
+  <p class="note">시안용 더미 데이터입니다. 상단 바에서 포인트 컬러와 모바일 프레임을 바꿔 볼 수 있습니다.</p>
+</main>
+</div>
+
+<script>
+  document.querySelectorAll('[data-set-accent]').forEach(b => b.addEventListener('click', () => {
+    document.documentElement.dataset.accent = b.dataset.setAccent;
+    document.querySelectorAll('[data-set-accent]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  }));
+  const f = document.getElementById('frame');
+  f.addEventListener('click', () => {
+    const on = document.body.classList.toggle('frame-mobile');
+    f.setAttribute('aria-pressed', on);
+  });
+</script>
+</body>
+</html>
