@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatKRW,
+  formatManwon,
   minTotal,
   perGuest,
   withOptionsTotal,
@@ -132,5 +133,30 @@ describe("대표 시나리오: 필수 4 + 옵션 2(1개 선택) + 할인 1 + VAT
 
   it("formats the total in KRW", () => {
     expect(formatKRW(withOptionsTotal(items))).toBe("5,600,000원");
+  });
+});
+
+describe("formatManwon", () => {
+  it("formats whole 만원 amounts without decimals", () => {
+    expect(formatManwon(12_400_000)).toBe("1,240만원");
+    expect(formatManwon(10_000)).toBe("1만원");
+  });
+
+  it("keeps one decimal place of 만원", () => {
+    expect(formatManwon(78_000)).toBe("7.8만원");
+    expect(formatManwon(12_345_678)).toBe("1,234.6만원");
+  });
+
+  it("rounds up into the next whole 만원", () => {
+    expect(formatManwon(99_999)).toBe("10만원");
+  });
+
+  it("falls back to 원 below 1만원", () => {
+    expect(formatManwon(9_999)).toBe("9,999원");
+    expect(formatManwon(0)).toBe("0원");
+  });
+
+  it("keeps the sign for negative amounts", () => {
+    expect(formatManwon(-3_200_000)).toBe("-320만원");
   });
 });
