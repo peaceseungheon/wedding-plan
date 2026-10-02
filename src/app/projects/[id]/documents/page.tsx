@@ -3,6 +3,9 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
+import { Button, buttonClass } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 
 /** GET /api/projects/{id}/documents 응답 행. 서버는 최근 업로드순으로 준다. */
 type DocumentRow = {
@@ -159,58 +162,56 @@ export default function DocumentsPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-bold text-zinc-900">문서</h1>
+    <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-4 pt-8 pb-16">
+      <PageHeader title="문서" meta={documents === null ? undefined : <span>문서 {documents.length}건</span>} />
 
-      <form
-        onSubmit={(event) => void upload(event)}
-        className="mt-6 rounded-lg border border-zinc-200 bg-white p-4"
-      >
-        <div className="flex flex-wrap items-center gap-3">
-          <input
-            ref={fileInputRef}
-            type="file"
-            onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
-            aria-label="업로드할 파일 선택"
-            accept=".pdf,.jpg,.jpeg,.png,.hwp,.docx,.xlsx,.zip"
-            className="text-sm text-zinc-700"
-          />
-          <button
-            type="submit"
-            disabled={uploading || selectedFile === null}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
-          >
-            업로드
-          </button>
-        </div>
-        <p className="mt-2 text-xs text-zinc-400">PDF·JPG·PNG·HWP·DOCX·XLSX·ZIP, 10MB 이하</p>
-        {uploading && <p className="mt-2 text-sm text-zinc-500">업로드 중...</p>}
-        {error !== null && <p className="mt-2 text-sm text-red-600">{error}</p>}
-      </form>
+      <Card title="업로드한 문서">
+        {documents === null ? (
+          <p className="text-sm text-ink-muted">불러오는 중...</p>
+        ) : documents.length === 0 ? (
+          <p className="text-sm text-ink-muted">업로드된 문서가 없습니다.</p>
+        ) : (
+          <ul className="flex flex-col divide-y divide-line">
+            {documents.map((doc) => (
+              <li key={doc.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3 text-sm first:pt-0 last:pb-0">
+                <span className="min-w-0 flex-1 basis-40 truncate" title={doc.fileName}>
+                  {doc.fileName}
+                </span>
+                <span className="tabular-nums text-ink-muted">{formatSize(doc.size)}</span>
+                <span className="tabular-nums text-ink-subtle">{doc.createdAt.slice(0, 10)}</span>
+                <a href={`/api/documents/${doc.id}/file`} className={buttonClass("secondary", "sm")}>
+                  다운로드
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
 
-      {documents === null ? (
-        <p className="mt-8 text-sm text-zinc-500">불러오는 중...</p>
-      ) : documents.length === 0 ? (
-        <p className="mt-8 text-sm text-zinc-400">업로드된 문서가 없습니다.</p>
-      ) : (
-        <ul className="mt-8 divide-y divide-zinc-100 rounded-lg border border-zinc-200 bg-white">
-          {documents.map((doc) => (
-            <li key={doc.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-              <span className="min-w-0 flex-1 truncate text-sm text-zinc-900" title={doc.fileName}>
-                {doc.fileName}
-              </span>
-              <span className="text-sm text-zinc-500">{formatSize(doc.size)}</span>
-              <span className="text-sm text-zinc-500">{doc.createdAt.slice(0, 10)}</span>
-              <a
-                href={`/api/documents/${doc.id}/file`}
-                className="text-sm font-medium text-zinc-900 underline hover:text-zinc-600"
-              >
-                다운로드
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
+      <Card title="문서 업로드">
+        <form onSubmit={(event) => void upload(event)} className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+              aria-label="업로드할 파일 선택"
+              accept=".pdf,.jpg,.jpeg,.png,.hwp,.docx,.xlsx,.zip"
+              className="min-w-0 max-w-full text-sm text-ink-muted"
+            />
+            <Button type="submit" disabled={uploading || selectedFile === null}>
+              업로드
+            </Button>
+          </div>
+          <p className="text-xs text-ink-subtle">PDF·JPG·PNG·HWP·DOCX·XLSX·ZIP, 10MB 이하</p>
+          {uploading && <p className="text-sm text-ink-muted">업로드 중...</p>}
+          {error !== null && (
+            <p role="alert" className="text-sm text-negative">
+              {error}
+            </p>
+          )}
+        </form>
+      </Card>
     </main>
   );
 }

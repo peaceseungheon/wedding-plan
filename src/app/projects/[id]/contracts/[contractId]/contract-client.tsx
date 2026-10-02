@@ -3,8 +3,24 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { formatKRW } from "@/lib/domain/totals";
+import { formatKRW, formatManwon } from "@/lib/domain/totals";
 import { PAYMENT_LABEL_TEXT, paymentLabelText } from "@/lib/constants/payment-labels";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Field, inputClass } from "@/components/ui/field";
+import { PageHeader } from "@/components/ui/page-header";
+import { Progress } from "@/components/ui/progress";
+import { Stat } from "@/components/ui/stat";
+import {
+  DataTable,
+  headRowClass,
+  numClass,
+  rowClass,
+  stickyCellClass,
+  tdClass,
+  thClass,
+} from "@/components/ui/table";
 
 /** GET /api/projects/{id}/contracts 목록 행(필요한 필드만). */
 type ContractRow = {
@@ -31,12 +47,6 @@ type NewPaymentForm = {
 };
 
 const EMPTY_NEW_PAYMENT: NewPaymentForm = { label: "DEPOSIT", amount: "", dueDate: "" };
-
-const inputClass = "rounded-md border border-zinc-300 px-2 py-1 text-sm text-zinc-900";
-const buttonClass =
-  "rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50";
-const primaryButtonClass =
-  "rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50";
 
 /** 에러 본문 {error: string}에서 메시지를 꺼낸다. JSON이 아니면 null. */
 async function errorOf(res: Response): Promise<string | null> {
@@ -321,197 +331,205 @@ export default function ContractClient({
   };
 
   // 지출 요약은 저장 값이 아니라 조회 시점 계산이므로 매 렌더마다 로컬 상태에서 재계산한다.
-  const contractAmountText = contract === null ? "…" : formatKRW(contract.amountSnapshot);
+  const contractAmountText = contract === null ? "…" : formatManwon(contract.amountSnapshot);
   const paidTotal = (payments ?? []).reduce(
     (sum, row) => (row.paidAt === null ? sum : sum + row.amount),
     0,
   );
-  const paidTotalText = contract === null || payments === null ? "…" : formatKRW(paidTotal);
+  const paidTotalText = contract === null || payments === null ? "…" : formatManwon(paidTotal);
   const remainingText =
     contract === null || payments === null
       ? "…"
-      : formatKRW(contract.amountSnapshot - paidTotal);
+      : formatManwon(contract.amountSnapshot - paidTotal);
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-8 font-sans">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">계약 상세</h1>
-      </header>
+    <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-4 pt-8 pb-16">
+      <PageHeader
+        title="계약 상세"
+        meta={
+          contract === null ? undefined : (
+            <>
+              <span>{contract.vendorNameSnapshot}</span>
+              <span className="tabular-nums">서명일 {contract.signedDate.slice(0, 10)}</span>
+            </>
+          )
+        }
+      />
 
-      {contractError !== null && <p className="text-sm text-red-600">{contractError}</p>}
-      {notice !== null && <p className="text-sm text-emerald-700">{notice}</p>}
-      {actionError !== null && <p className="text-sm text-red-600">{actionError}</p>}
+      {contractError !== null && (
+        <p role="alert" className="text-sm text-negative">
+          {contractError}
+        </p>
+      )}
+      {notice !== null && (
+        <p role="status" className="text-sm text-positive">
+          ✓ {notice}
+        </p>
+      )}
+      {actionError !== null && (
+        <p role="alert" className="text-sm text-negative">
+          {actionError}
+        </p>
+      )}
 
       {contractError === null && (
         <>
-          <section className="flex flex-col gap-3">
-            <h2 className="text-lg font-semibold text-zinc-900">계약 정보</h2>
-            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="rounded-md border border-zinc-200 p-3">
-                <dt className="text-xs text-zinc-500">업체명</dt>
-                <dd className="text-base font-medium text-zinc-900">
-                  {contract?.vendorNameSnapshot ?? "…"}
+          <section className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4" aria-label="지출 요약">
+            <Stat label="계약금액" value={contractAmountText} />
+            <Stat label="완납 합계" value={paidTotalText}>
+              {contract !== null && payments !== null && contract.amountSnapshot > 0 && (
+                <>
+                  <span className="text-ink-muted">
+                    계약금액의 {Math.round((paidTotal / contract.amountSnapshot) * 100)}%
+                  </span>
+                  <Progress label="계약금액 대비 완납 합계" value={paidTotal / contract.amountSnapshot} tone="accent" />
+                </>
+              )}
+            </Stat>
+            <Stat label="잔여" value={remainingText} />
+          </section>
+
+          <Card title="계약 정보">
+            <dl className="flex flex-col divide-y divide-line text-sm">
+              <div className="flex items-baseline justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                <dt className="text-ink-muted">업체명</dt>
+                <dd className="font-medium">{contract?.vendorNameSnapshot ?? "…"}</dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                <dt className="text-ink-muted">계약금액</dt>
+                <dd className="font-semibold tabular-nums">
+                  {contract === null ? "…" : formatKRW(contract.amountSnapshot)}
                 </dd>
               </div>
-              <div className="rounded-md border border-zinc-200 p-3">
-                <dt className="text-xs text-zinc-500">계약금액</dt>
-                <dd className="text-base font-semibold tabular-nums text-zinc-900">
-                  {contractAmountText}
-                </dd>
-              </div>
-              <div className="rounded-md border border-zinc-200 p-3">
-                <dt className="text-xs text-zinc-500">서명일</dt>
-                <dd className="text-base font-medium text-zinc-900">
-                  {contract?.signedDate.slice(0, 10) ?? "…"}
-                </dd>
+              <div className="flex items-baseline justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                <dt className="text-ink-muted">서명일</dt>
+                <dd className="font-medium tabular-nums">{contract?.signedDate.slice(0, 10) ?? "…"}</dd>
               </div>
               {contract?.notes != null && contract.notes !== "" && (
-                <div className="rounded-md border border-zinc-200 p-3">
-                  <dt className="text-xs text-zinc-500">메모</dt>
-                  <dd className="text-base font-medium text-zinc-900">{contract.notes}</dd>
+                <div className="flex items-baseline justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                  <dt className="shrink-0 text-ink-muted">메모</dt>
+                  <dd className="min-w-0 break-words text-right">{contract.notes}</dd>
                 </div>
               )}
             </dl>
-          </section>
+          </Card>
 
-          <section className="flex flex-col gap-3">
-            <h2 className="text-lg font-semibold text-zinc-900">결제 스케줄</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[560px] text-sm">
-                <thead>
-                  <tr className="border-b border-zinc-200 text-left text-xs text-zinc-500">
-                    <th className="py-2 pr-2 font-medium">라벨</th>
-                    <th className="py-2 pr-2 font-medium">금액</th>
-                    <th className="py-2 pr-2 font-medium">기한</th>
-                    <th className="py-2 font-medium">완납</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(payments ?? []).map((payment) => (
-                    <tr key={payment.id} className="border-b border-zinc-100">
-                      <td className="py-2 pr-2">{paymentLabelText(payment.label)}</td>
-                      <td className="whitespace-nowrap py-2 pr-2 tabular-nums">
-                        {formatKRW(payment.amount)}
-                      </td>
-                      <td className="whitespace-nowrap py-2 pr-2 tabular-nums">
-                        {payment.dueDate.slice(0, 10)}
-                      </td>
-                      <td className="whitespace-nowrap py-2">
-                        {payment.paidAt === null ? (
-                          <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-600">
-                            미완납
+          <Card title="결제 스케줄">
+            <DataTable>
+              <thead>
+                <tr className={headRowClass}>
+                  <th className={`${thClass} ${stickyCellClass}`}>라벨</th>
+                  <th className={`${thClass} text-right`}>금액</th>
+                  <th className={`${thClass} text-right`}>기한</th>
+                  <th className={thClass}>완납</th>
+                  <th className={thClass}>
+                    <span className="sr-only">처리</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {(payments ?? []).map((payment) => (
+                  <tr key={payment.id} className={rowClass}>
+                    <td className={`${tdClass} ${stickyCellClass} whitespace-nowrap`}>{paymentLabelText(payment.label)}</td>
+                    <td className={`${tdClass} ${numClass}`}>{formatKRW(payment.amount)}</td>
+                    <td className={`${tdClass} ${numClass}`}>{payment.dueDate.slice(0, 10)}</td>
+                    <td className={`${tdClass} whitespace-nowrap`}>
+                      {payment.paidAt === null ? (
+                        <Badge tone="neutral">미완납</Badge>
+                      ) : (
+                        <>
+                          <Badge tone="positive">✓ 완납</Badge>
+                          <span className="ml-2 text-xs tabular-nums text-ink-subtle">
+                            {payment.paidAt.slice(0, 10)}
                           </span>
-                        ) : (
-                          <>
-                            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-                              완납
-                            </span>
-                            <span className="ml-2 text-xs text-zinc-500">
-                              {payment.paidAt.slice(0, 10)}
-                            </span>
-                          </>
-                        )}{" "}
-                        <button
-                          className={buttonClass}
-                          onClick={() => void togglePaid(payment)}
-                          disabled={togglingId === payment.id}
-                        >
-                          {payment.paidAt === null ? "완납" : "완납 취소"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        </>
+                      )}
+                    </td>
+                    <td className={`${tdClass} text-right`}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => void togglePaid(payment)}
+                        disabled={togglingId === payment.id}
+                      >
+                        {payment.paidAt === null ? "완납" : "완납 취소"}
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </DataTable>
             {payments === null &&
               (paymentsError === null ? (
-                <p className="text-sm text-zinc-500">결제를 불러오는 중…</p>
+                <p className="mt-3 text-sm text-ink-muted">결제를 불러오는 중…</p>
               ) : (
-                <p className="text-sm text-red-600">{paymentsError}</p>
+                <p role="alert" className="mt-3 text-sm text-negative">
+                  {paymentsError}
+                </p>
               ))}
             {payments !== null && payments.length === 0 && (
-              <p className="text-sm text-zinc-500">결제가 없습니다.</p>
+              <p className="mt-3 text-sm text-ink-muted">결제가 없습니다.</p>
             )}
+          </Card>
 
-            <div className="flex flex-col gap-2 rounded-md border border-zinc-200 p-3">
-              <button
-                className={buttonClass}
-                onClick={() => void prefillStandard()}
-                disabled={prefilling || contract === null}
-              >
-                계약금/중도금/잔금 자동 채우기
-              </button>
-              <p className="text-xs text-zinc-500">
-                계약금 10%·중도금 30%·잔금 60%(나머지 절사 반영)를 서명일·+30일·+60일 기한으로
-                바로 등록합니다.
-              </p>
+          <Card title="결제 추가">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col items-start gap-1.5">
+                <Button
+                  variant="secondary"
+                  onClick={() => void prefillStandard()}
+                  disabled={prefilling || contract === null}
+                >
+                  계약금/중도금/잔금 자동 채우기
+                </Button>
+                <p className="text-xs text-ink-subtle">
+                  계약금 10%·중도금 30%·잔금 60%(나머지 절사 반영)를 서명일·+30일·+60일 기한으로
+                  바로 등록합니다.
+                </p>
+              </div>
               <form
-                className="flex flex-wrap items-end gap-2"
+                className="flex flex-col gap-4 border-t border-line pt-4"
                 onSubmit={(event) => void addPayment(event)}
               >
-                <label className="flex flex-col gap-1 text-sm text-zinc-700">
-                  라벨
-                  <select
-                    className={inputClass}
-                    value={newPayment.label}
-                    onChange={(e) => setNewPayment({ ...newPayment, label: e.target.value })}
-                  >
-                    {Object.entries(PAYMENT_LABEL_TEXT).map(([value, text]) => (
-                      <option key={value} value={value}>
-                        {text}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-sm text-zinc-700">
-                  금액
-                  <input
-                    className={`${inputClass} w-28`}
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={newPayment.amount}
-                    onChange={(e) => setNewPayment({ ...newPayment, amount: e.target.value })}
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-sm text-zinc-700">
-                  기한
-                  <input
-                    className={inputClass}
-                    type="date"
-                    value={newPayment.dueDate}
-                    onChange={(e) => setNewPayment({ ...newPayment, dueDate: e.target.value })}
-                  />
-                </label>
-                <button className={primaryButtonClass} type="submit" disabled={adding}>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <Field label="라벨">
+                    <select
+                      className={inputClass}
+                      value={newPayment.label}
+                      onChange={(e) => setNewPayment({ ...newPayment, label: e.target.value })}
+                    >
+                      {Object.entries(PAYMENT_LABEL_TEXT).map(([value, text]) => (
+                        <option key={value} value={value}>
+                          {text}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="금액">
+                    <input
+                      className={`${inputClass} tabular-nums`}
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={newPayment.amount}
+                      onChange={(e) => setNewPayment({ ...newPayment, amount: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="기한">
+                    <input
+                      className={`${inputClass} tabular-nums`}
+                      type="date"
+                      value={newPayment.dueDate}
+                      onChange={(e) => setNewPayment({ ...newPayment, dueDate: e.target.value })}
+                    />
+                  </Field>
+                </div>
+                <Button type="submit" disabled={adding} className="self-start">
                   결제 추가
-                </button>
+                </Button>
               </form>
             </div>
-          </section>
-
-          <section className="flex flex-col gap-3">
-            <h2 className="text-lg font-semibold text-zinc-900">지출 요약</h2>
-            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="rounded-md border border-zinc-200 p-3">
-                <dt className="text-xs text-zinc-500">계약액</dt>
-                <dd className="text-lg font-semibold tabular-nums text-zinc-900">
-                  {contractAmountText}
-                </dd>
-              </div>
-              <div className="rounded-md border border-zinc-200 p-3">
-                <dt className="text-xs text-zinc-500">완납 합계</dt>
-                <dd className="text-lg font-semibold tabular-nums text-zinc-900">{paidTotalText}</dd>
-              </div>
-              <div className="rounded-md border border-zinc-200 p-3">
-                <dt className="text-xs text-zinc-500">잔여</dt>
-                <dd className="text-lg font-semibold tabular-nums text-zinc-900">
-                  {remainingText}
-                </dd>
-              </div>
-            </dl>
-          </section>
+          </Card>
         </>
       )}
     </main>

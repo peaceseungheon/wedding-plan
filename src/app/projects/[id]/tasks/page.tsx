@@ -3,6 +3,11 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Field, inputClass } from "@/components/ui/field";
+import { PageHeader } from "@/components/ui/page-header";
 
 /** GET /api/projects/{id}/tasks 응답 행. 서버는 sortOrder 오름차순으로 준다. */
 type TaskRow = {
@@ -179,86 +184,91 @@ export default function TasksPage() {
 
   function renderRow(task: TaskRow): ReactNode {
     return (
-      <li key={task.id} className="flex items-center gap-3 px-4 py-3">
+      <li key={task.id} className="flex items-center gap-3 py-3 text-sm first:pt-0 last:pb-0">
         <input
           type="checkbox"
-          className="h-4 w-4 accent-zinc-900"
+          className="h-4 w-4 shrink-0 accent-ink"
           checked={task.done}
           disabled={togglingId === task.id}
           onChange={() => void toggleDone(task)}
           aria-label={`${task.title} 완료`}
         />
-        <span
-          className={
-            task.done ? "flex-1 text-sm text-zinc-400 line-through" : "flex-1 text-sm text-zinc-900"
-          }
-        >
+        <span className={task.done ? "min-w-0 flex-1 text-ink-subtle line-through" : "min-w-0 flex-1"}>
           {task.title}
         </span>
+        {task.done && <Badge tone="positive">✓ 완료</Badge>}
         {task.dueDate !== null && (
-          <span className="text-sm text-zinc-500">{task.dueDate.slice(0, 10)}</span>
+          <span className="shrink-0 tabular-nums text-ink-subtle">{task.dueDate.slice(0, 10)}</span>
         )}
       </li>
     );
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-bold text-zinc-900">할 일</h1>
+    <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-4 pt-8 pb-16">
+      <PageHeader
+        title="할 일"
+        meta={
+          tasks === null ? undefined : (
+            <span className="tabular-nums">
+              {tasks.filter((task) => task.done).length}/{tasks.length} 완료
+            </span>
+          )
+        }
+      />
 
-      <form
-        onSubmit={(event) => void addTask(event)}
-        className="mt-6 flex flex-wrap items-center gap-2 rounded-lg border border-zinc-200 bg-white p-4"
-      >
-        <input
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          placeholder="할 일 제목"
-          className="min-w-40 flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
-        />
-        <input
-          type="date"
-          value={dueDate}
-          onChange={(event) => setDueDate(event.target.value)}
-          aria-label="마감일"
-          className="rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
-        />
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
-        >
-          추가
-        </button>
-      </form>
-      {error !== null && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error !== null && (
+        <p role="alert" className="text-sm text-negative">
+          {error}
+        </p>
+      )}
 
       {groups === null ? (
-        <p className="mt-8 text-sm text-zinc-500">불러오는 중...</p>
+        <p className="text-sm text-ink-muted">불러오는 중...</p>
       ) : (
         <>
-          <section className="mt-8">
-            <h2 className="text-sm font-semibold text-zinc-500">마감일 있음 · 임박순</h2>
-            <ul className="mt-2 divide-y divide-zinc-100 rounded-lg border border-zinc-200 bg-white">
-              {groups.dated.length === 0 ? (
-                <li className="px-4 py-3 text-sm text-zinc-400">마감일이 있는 할 일이 없습니다.</li>
-              ) : (
-                groups.dated.map(renderRow)
-              )}
-            </ul>
-          </section>
-          <section className="mt-8">
-            <h2 className="text-sm font-semibold text-zinc-500">마감일 없음</h2>
-            <ul className="mt-2 divide-y divide-zinc-100 rounded-lg border border-zinc-200 bg-white">
-              {groups.undated.length === 0 ? (
-                <li className="px-4 py-3 text-sm text-zinc-400">할 일이 없습니다.</li>
-              ) : (
-                groups.undated.map(renderRow)
-              )}
-            </ul>
-          </section>
+          <Card title="마감일 있음 · 임박순">
+            {groups.dated.length === 0 ? (
+              <p className="text-sm text-ink-muted">마감일이 있는 할 일이 없습니다.</p>
+            ) : (
+              <ul className="flex flex-col divide-y divide-line">{groups.dated.map(renderRow)}</ul>
+            )}
+          </Card>
+          <Card title="마감일 없음">
+            {groups.undated.length === 0 ? (
+              <p className="text-sm text-ink-muted">할 일이 없습니다.</p>
+            ) : (
+              <ul className="flex flex-col divide-y divide-line">{groups.undated.map(renderRow)}</ul>
+            )}
+          </Card>
         </>
       )}
+
+      <Card title="할 일 추가">
+        <form onSubmit={(event) => void addTask(event)} className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-[1fr_12rem]">
+            <Field label="제목">
+              <input
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="할 일 제목"
+                className={inputClass}
+              />
+            </Field>
+            <Field label="마감일">
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(event) => setDueDate(event.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+          <Button type="submit" disabled={submitting} className="self-start">
+            추가
+          </Button>
+        </form>
+      </Card>
     </main>
   );
 }
