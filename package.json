@@ -10,7 +10,8 @@
     "test": "vitest run",
     "db:up": "docker compose up -d",
     "db:migrate": "prisma migrate dev",
-    "import:benchmarks": "tsx scripts/import-benchmarks.ts"
+    "import:benchmarks": "tsx scripts/import-benchmarks.ts",
+    "scrape:wedding-halls": "tsx scripts/scrape-wedding-halls.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.10.0",
