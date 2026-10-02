@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { formatKRW, formatManwon } from "@/lib/domain/totals";
 import { budgetTone, type Tone } from "@/lib/domain/tone";
+import { paymentLabelText } from "@/lib/constants/payment-labels";
 import { REGION_OPTIONS, isRegionOption } from "@/lib/constants/regions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -341,7 +342,7 @@ export default function DashboardPage() {
         title={project === null ? "…" : project.title}
         meta={project === null ? undefined : <ProjectMeta project={project} />}
         aside={
-          <div className="text-right">
+          <div className="sm:text-right">
             <p className="text-xs text-ink-subtle">예식까지</p>
             <p
               className={`font-serif font-semibold leading-none tabular-nums text-accent ${
@@ -441,7 +442,7 @@ export default function DashboardPage() {
                     <b className="block text-base">{due.getUTCDate()}</b>
                     <span className="text-[11px] text-ink-subtle">{due.getUTCMonth() + 1}월</span>
                   </span>
-                  <span className="min-w-0 flex-1 truncate">{payment.label}</span>
+                  <span className="min-w-0 flex-1 truncate">{paymentLabelText(payment.label)}</span>
                   <span className="font-semibold tabular-nums">{formatKRW(payment.amount)}</span>
                 </li>
               );

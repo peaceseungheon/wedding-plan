@@ -216,17 +216,17 @@ export default function CompareClient({
       <Card title="항목 비교">
         {loading && <p className="text-sm text-ink-muted">비교 항목을 불러오는 중…</p>}
         {data !== null && (
-          <div className="-mx-5 overflow-x-auto px-5">
+          <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-line-strong">
-                  <th className="sticky left-0 bg-surface py-2.5 pr-3 text-left align-bottom text-[13px] font-medium text-ink-muted">
+                  <th className="sticky left-0 z-10 bg-surface py-2.5 pr-3 text-left align-bottom text-[13px] font-medium text-ink-muted">
                     항목
                   </th>
                   {data.quotes.map((quote) => (
                     <th key={quote.quoteId} className="px-3 py-2.5 text-right align-bottom font-normal">
                       <span className="block text-sm font-semibold text-ink">{quote.vendorName}</span>
-                      <span className="block text-xs tabular-nums text-ink-subtle">
+                      <span className="block whitespace-nowrap text-xs tabular-nums text-ink-subtle">
                         {quote.quoteDate.slice(0, 10)} · 보장 {quote.guestCount}명
                       </span>
                     </th>
@@ -238,7 +238,7 @@ export default function CompareClient({
                   const lowest = lowestQuoteIds(row.perQuote);
                   return (
                     <tr key={row.itemCode ?? `etc-${index}`} className="border-b border-line">
-                      <th scope="row" className="sticky left-0 bg-surface py-2.5 pr-3 text-left font-normal text-ink-muted">
+                      <th scope="row" className="sticky left-0 z-10 bg-surface py-2.5 pr-3 text-left font-normal text-ink-muted">
                         {row.label}
                       </th>
                       {data.quotes.map((quote) => {
@@ -266,7 +266,7 @@ export default function CompareClient({
               </tbody>
               <tfoot>
                 <tr className="border-t border-line-strong">
-                  <th scope="row" className="sticky left-0 bg-surface py-3 pr-3 text-left font-semibold">
+                  <th scope="row" className="sticky left-0 z-10 whitespace-nowrap bg-surface py-3 pr-3 text-left font-semibold">
                     옵션 포함 총액
                   </th>
                   {data.quotes.map((quote) => (

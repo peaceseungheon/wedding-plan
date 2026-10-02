@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { formatKRW } from "@/lib/domain/totals";
+import { PAYMENT_LABEL_TEXT, paymentLabelText } from "@/lib/constants/payment-labels";
 
 /** GET /api/projects/{id}/contracts 목록 행(필요한 필드만). */
 type ContractRow = {
@@ -30,17 +31,6 @@ type NewPaymentForm = {
 };
 
 const EMPTY_NEW_PAYMENT: NewPaymentForm = { label: "DEPOSIT", amount: "", dueDate: "" };
-
-const PAYMENT_LABEL_TEXT: Readonly<Record<string, string>> = {
-  DEPOSIT: "계약금",
-  MIDDLE: "중도금",
-  FINAL: "잔금",
-  ETC: "기타",
-};
-
-function labelText(label: string): string {
-  return PAYMENT_LABEL_TEXT[label] ?? label;
-}
 
 const inputClass = "rounded-md border border-zinc-300 px-2 py-1 text-sm text-zinc-900";
 const buttonClass =
@@ -399,7 +389,7 @@ export default function ContractClient({
                 <tbody>
                   {(payments ?? []).map((payment) => (
                     <tr key={payment.id} className="border-b border-zinc-100">
-                      <td className="py-2 pr-2">{labelText(payment.label)}</td>
+                      <td className="py-2 pr-2">{paymentLabelText(payment.label)}</td>
                       <td className="whitespace-nowrap py-2 pr-2 tabular-nums">
                         {formatKRW(payment.amount)}
                       </td>
