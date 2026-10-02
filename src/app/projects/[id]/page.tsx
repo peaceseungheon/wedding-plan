@@ -3,8 +3,16 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { formatKRW } from "@/lib/domain/totals";
+import { formatKRW, formatManwon } from "@/lib/domain/totals";
+import { budgetTone, type Tone } from "@/lib/domain/tone";
 import { REGION_OPTIONS, isRegionOption } from "@/lib/constants/regions";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardLink } from "@/components/ui/card";
+import { Field, inputClass } from "@/components/ui/field";
+import { PageHeader } from "@/components/ui/page-header";
+import { Progress } from "@/components/ui/progress";
+import { Stat } from "@/components/ui/stat";
 
 type BudgetCategoryBar = { readonly name: string; readonly plannedAmount: number };
 type UpcomingPayment = {
@@ -182,6 +190,33 @@ function toForm(project: ProjectInfo): SettingsForm {
   };
 }
 
+/** 계약 총액이 예산 대비 어떤 상태인지 배지 문구로 바꾼다. */
+function describeContracted(contracted: number, budget: number): { tone: Tone; text: string } {
+  const tone = budgetTone(contracted, budget);
+  if (tone === "neutral") return { tone, text: "예산 미설정" };
+  if (tone === "negative") return { tone, text: `▲ ${formatManwon(contracted - budget)} 초과` };
+  if (tone === "caution") return { tone, text: `! 예산의 ${Math.round((contracted / budget) * 100)}%` };
+  return { tone, text: `✓ 남은 예산 ${formatManwon(budget - contracted)}` };
+}
+
+/** 예식일은 UTC 자정으로 저장되므로(parseWeddingDate) UTC 기준으로 표시한다. */
+const weddingDateFormatter = new Intl.DateTimeFormat("ko-KR", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  weekday: "short",
+  timeZone: "UTC",
+});
+
+function ProjectMeta({ project }: { project: ProjectInfo }) {
+  const items = [
+    project.weddingDate === null ? "예식일 미정" : weddingDateFormatter.format(new Date(project.weddingDate)),
+    project.region ?? "지역 미정",
+    project.guestCount === null ? "하객 미정" : `하객 ${project.guestCount}명`,
+  ];
+  return items.map((item) => <span key={item}>{item}</span>);
+}
+
 export default function DashboardPage() {
   const params = useParams<{ id: string }>();
   const projectId = params.id;
@@ -295,170 +330,185 @@ export default function DashboardPage() {
   }
 
   const dDay = dashboard === null ? null : dashboard.dDay;
-  const maxBudget = (dashboard?.budgetByCategory ?? []).reduce(
-    (max, row) => Math.max(max, row.plannedAmount),
-    0,
-  );
+  const budgetTotal = dashboard?.budgetTotal ?? 0;
   const progress = dashboard === null ? null : dashboard.tasksProgress;
-  const progressPercent =
-    progress !== null && progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
+  const progressRatio = progress !== null && progress.total > 0 ? progress.done / progress.total : 0;
+  const contracted = dashboard === null ? null : describeContracted(dashboard.contractedTotal, budgetTotal);
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8">
-      <header className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-semibold">{project === null ? "…" : project.title}</h1>
-        <span className="rounded bg-zinc-100 px-2 py-1 text-sm text-zinc-700">
-          D-Day {dashboard === null ? "…" : formatDDay(dDay)}
-        </span>
-      </header>
+    <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-4 pt-8 pb-16">
+      <PageHeader
+        title={project === null ? "…" : project.title}
+        meta={project === null ? undefined : <ProjectMeta project={project} />}
+        aside={
+          <div className="text-right">
+            <p className="text-xs text-ink-subtle">예식까지</p>
+            <p
+              className={`font-serif font-semibold leading-none tabular-nums text-accent ${
+                dDay === null ? "mt-1 text-xl" : "text-4xl sm:text-[44px]"
+              }`}
+            >
+              {dashboard === null ? "…" : formatDDay(dDay)}
+            </p>
+          </div>
+        }
+      />
 
-      {loadError !== null && <p className="text-sm text-red-600">{loadError}</p>}
+      {loadError !== null && (
+        <p role="alert" className="text-sm text-negative">
+          {loadError}
+        </p>
+      )}
 
-      <section className="grid gap-3 sm:grid-cols-3" aria-label="예산 요약">
-        <div className="flex flex-col gap-1 rounded border border-zinc-200 p-3">
-          <span className="text-sm text-zinc-600">예산 총액</span>
-          <span className="text-lg font-semibold">
-            {dashboard === null ? "…" : formatKRW(dashboard.budgetTotal)}
-          </span>
-        </div>
-        <div className="flex flex-col gap-1 rounded border border-zinc-200 p-3">
-          <span className="text-sm text-zinc-600">계약 총액</span>
-          <span className="text-lg font-semibold">
-            {dashboard === null ? "…" : formatKRW(dashboard.contractedTotal)}
-          </span>
-        </div>
-        <div className="flex flex-col gap-1 rounded border border-zinc-200 p-3">
-          <span className="text-sm text-zinc-600">완납 합</span>
-          <span className="text-lg font-semibold">
-            {dashboard === null ? "…" : formatKRW(dashboard.paidTotal)}
-          </span>
-        </div>
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-lg font-medium">카테고리별 예산</h2>
-          <Link href={`/projects/${projectId}/budget`} className="text-sm text-blue-600 underline">
-            예산 편집
-          </Link>
-        </div>
-        {dashboard === null && <p className="text-sm text-zinc-600">불러오는 중...</p>}
-        {dashboard !== null && dashboard.budgetByCategory.length === 0 && (
-          <p className="text-sm text-zinc-600">예산 카테고리가 없습니다.</p>
-        )}
-        <ul className="flex flex-col gap-2">
-          {(dashboard?.budgetByCategory ?? []).map((row) => (
-            <li key={row.name} className="flex flex-col gap-1">
-              <div className="flex items-baseline justify-between text-sm">
-                <span>{row.name}</span>
-                <span className="text-zinc-600">{formatKRW(row.plannedAmount)}</span>
-              </div>
-              <div className="h-2 w-full rounded bg-zinc-100">
-                <div
-                  className="h-2 rounded bg-zinc-700"
-                  style={{
-                    width:
-                      maxBudget > 0
-                        ? `${Math.round((row.plannedAmount / maxBudget) * 100)}%`
-                        : "0%",
-                  }}
+      <section className="grid gap-3 sm:grid-cols-3 sm:gap-4" aria-label="예산 요약">
+        <Stat label="예산 총액" value={dashboard === null ? "…" : formatManwon(dashboard.budgetTotal)}>
+          {dashboard !== null && (
+            <span className="text-ink-subtle">카테고리 {dashboard.budgetByCategory.length}개</span>
+          )}
+        </Stat>
+        <Stat label="계약 총액" value={dashboard === null ? "…" : formatManwon(dashboard.contractedTotal)}>
+          {dashboard !== null && contracted !== null && (
+            <>
+              <Badge tone={contracted.tone}>{contracted.text}</Badge>
+              {budgetTotal > 0 && (
+                <Progress
+                  label="예산 대비 계약 총액"
+                  value={dashboard.contractedTotal / budgetTotal}
+                  tone={contracted.tone}
                 />
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">다가오는 결제</h2>
-        {dashboard === null && <p className="text-sm text-zinc-600">불러오는 중...</p>}
-        {dashboard !== null && dashboard.upcomingPayments.length === 0 && (
-          <p className="text-sm text-zinc-600">다가오는 결제가 없습니다.</p>
-        )}
-        <ul className="flex flex-col gap-2">
-          {(dashboard?.upcomingPayments ?? []).map((payment) => (
-            <li key={payment.id} className="flex items-baseline justify-between rounded border border-zinc-200 p-3 text-sm">
-              <span>{payment.label}</span>
-              <span className="text-zinc-600">
-                {formatKRW(payment.amount)} · {payment.dueDate.slice(0, 10)}
+              )}
+            </>
+          )}
+        </Stat>
+        <Stat label="결제 완료" value={dashboard === null ? "…" : formatManwon(dashboard.paidTotal)}>
+          {dashboard !== null && dashboard.contractedTotal > 0 && (
+            <>
+              <span className="text-ink-muted">
+                계약 총액의 {Math.round((dashboard.paidTotal / dashboard.contractedTotal) * 100)}%
               </span>
-            </li>
-          ))}
-        </ul>
+              <Progress
+                label="계약 총액 대비 결제 완료"
+                value={dashboard.paidTotal / dashboard.contractedTotal}
+                tone="accent"
+              />
+            </>
+          )}
+        </Stat>
       </section>
 
-      <section className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-lg font-medium">체크리스트 진행률</h2>
-          <span className="text-sm text-zinc-600">
-            {progress === null ? "…" : `${progress.done}/${progress.total} (${progressPercent}%)`}
-          </span>
-        </div>
-        <div className="h-2 w-full rounded bg-zinc-100">
-          <div className="h-2 rounded bg-emerald-600" style={{ width: `${progressPercent}%` }} />
-        </div>
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">업체 · 견적</h2>
-        <Link
-          href={`/projects/${projectId}/vendors`}
-          className="rounded border border-zinc-200 p-3 text-sm hover:border-zinc-400"
+      <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <Card
+          title="카테고리별 예산"
+          action={<CardLink href={`/projects/${projectId}/budget`}>예산 편집</CardLink>}
         >
-          업체 {dashboard === null ? "…" : dashboard.vendorCount}개 · 견적{" "}
-          {dashboard === null ? "…" : dashboard.quoteCount}건 — 업체 관리로 이동
-        </Link>
-      </section>
+          {dashboard === null && <p className="text-sm text-ink-muted">불러오는 중...</p>}
+          {dashboard !== null && dashboard.budgetByCategory.length === 0 && (
+            <p className="text-sm text-ink-muted">예산 카테고리가 없습니다.</p>
+          )}
+          <ul className="flex flex-col divide-y divide-line">
+            {(dashboard?.budgetByCategory ?? []).map((row) => (
+              <li
+                key={row.name}
+                className="grid grid-cols-[5.5rem_1fr_auto] items-center gap-3 py-2.5 text-sm first:pt-0 last:pb-0"
+              >
+                <span className="truncate">{row.name}</span>
+                <Progress
+                  label={`${row.name} 예산 비중`}
+                  value={budgetTotal > 0 ? row.plannedAmount / budgetTotal : 0}
+                  tone="neutral"
+                />
+                {row.plannedAmount > 0 ? (
+                  <span className="tabular-nums text-ink-muted">{formatManwon(row.plannedAmount)}</span>
+                ) : (
+                  <Badge tone="neutral">미정</Badge>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Card>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">계약 목록</h2>
-        {contracts === null && <p className="text-sm text-zinc-600">불러오는 중...</p>}
-        {contracts !== null && contracts.length === 0 && (
-          <p className="text-sm text-zinc-600">계약이 없습니다.</p>
-        )}
-        <ul className="flex flex-col gap-2">
+        <Card title="다가오는 결제">
+          {dashboard === null && <p className="text-sm text-ink-muted">불러오는 중...</p>}
+          {dashboard !== null && dashboard.upcomingPayments.length === 0 && (
+            <p className="text-sm text-ink-muted">다가오는 결제가 없습니다.</p>
+          )}
+          <ul className="flex flex-col divide-y divide-line">
+            {(dashboard?.upcomingPayments ?? []).map((payment) => {
+              const due = new Date(payment.dueDate);
+              return (
+                <li key={payment.id} className="flex items-center gap-3 py-3 text-sm first:pt-0 last:pb-0">
+                  <span className="w-11 shrink-0 rounded-lg border border-line py-1 text-center leading-tight tabular-nums">
+                    <b className="block text-base">{due.getUTCDate()}</b>
+                    <span className="text-[11px] text-ink-subtle">{due.getUTCMonth() + 1}월</span>
+                  </span>
+                  <span className="min-w-0 flex-1 truncate">{payment.label}</span>
+                  <span className="font-semibold tabular-nums">{formatKRW(payment.amount)}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card title="체크리스트 진행률" action={<CardLink href={`/projects/${projectId}/tasks`}>할 일</CardLink>}>
+          <p className="mb-3 text-sm tabular-nums text-ink-muted">
+            {progress === null
+              ? "…"
+              : `${progress.done}/${progress.total} 완료 (${Math.round(progressRatio * 100)}%)`}
+          </p>
+          <Progress label="체크리스트 진행률" value={progressRatio} tone="accent" />
+        </Card>
+        <Card title="업체 · 견적" action={<CardLink href={`/projects/${projectId}/vendors`}>업체 관리</CardLink>}>
+          <p className="text-sm text-ink-muted">
+            업체 <b className="tabular-nums text-ink">{dashboard === null ? "…" : dashboard.vendorCount}</b>개 · 견적{" "}
+            <b className="tabular-nums text-ink">{dashboard === null ? "…" : dashboard.quoteCount}</b>건
+          </p>
+        </Card>
+      </div>
+
+      <Card title="계약 목록">
+        {contracts === null && <p className="text-sm text-ink-muted">불러오는 중...</p>}
+        {contracts !== null && contracts.length === 0 && <p className="text-sm text-ink-muted">계약이 없습니다.</p>}
+        <ul className="flex flex-col divide-y divide-line">
           {(contracts ?? []).map((row) => (
             <li key={row.id}>
               <Link
                 href={`/projects/${projectId}/contracts/${row.id}`}
-                className="flex items-baseline justify-between rounded border border-zinc-200 p-3 text-sm hover:border-zinc-400"
+                className="flex items-baseline justify-between gap-3 py-3 text-sm hover:text-accent"
               >
                 <span className="font-medium">{row.vendorNameSnapshot}</span>
-                <span className="text-zinc-600">
+                <span className="tabular-nums text-ink-muted">
                   {formatKRW(row.amountSnapshot)} · {row.signedDate.slice(0, 10)}
                 </span>
               </Link>
             </li>
           ))}
         </ul>
-      </section>
+      </Card>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">프로젝트 설정</h2>
-        <form onSubmit={saveSettings} className="flex flex-col gap-3 rounded border border-zinc-200 p-3">
-          <label className="flex flex-col gap-1 text-sm">
-            제목
+      <Card title="프로젝트 설정">
+        <form onSubmit={saveSettings} className="flex flex-col gap-4">
+          <Field label="제목">
             <input
               required
-              className="rounded border border-zinc-300 px-3 py-2"
+              className={inputClass}
               value={form.title}
               onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
             />
-          </label>
-          <div className="flex flex-wrap gap-2">
-            <label className="flex flex-1 flex-col gap-1 text-sm">
-              예식일 (비우면 미정)
+          </Field>
+          <div className="grid gap-4 sm:grid-cols-[1fr_1fr_8rem]">
+            <Field label="예식일" hint="비우면 미정">
               <input
                 type="date"
-                className="rounded border border-zinc-300 px-3 py-2"
+                className={inputClass}
                 value={form.weddingDate}
                 onChange={(event) => setForm((prev) => ({ ...prev, weddingDate: event.target.value }))}
               />
-            </label>
-            <label className="flex flex-1 flex-col gap-1 text-sm">
-              지역
+            </Field>
+            <Field label="지역">
               <select
-                className="rounded border border-zinc-300 px-3 py-2"
+                className={inputClass}
                 value={form.region}
                 onChange={(event) => setForm((prev) => ({ ...prev, region: event.target.value }))}
               >
@@ -473,27 +523,26 @@ export default function DashboardPage() {
                   </option>
                 ))}
               </select>
-            </label>
-            <label className="flex w-32 flex-col gap-1 text-sm">
-              하객 인원
+            </Field>
+            <Field label="하객 인원">
               <input
                 type="number"
-                className="rounded border border-zinc-300 px-3 py-2"
+                className={inputClass}
                 value={form.guestCount}
                 onChange={(event) => setForm((prev) => ({ ...prev, guestCount: event.target.value }))}
               />
-            </label>
+            </Field>
           </div>
-          {saveError !== null && <p className="text-sm text-red-600">{saveError}</p>}
-          <button
-            type="submit"
-            disabled={saving}
-            className="self-start rounded bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-50"
-          >
+          {saveError !== null && (
+            <p role="alert" className="text-sm text-negative">
+              {saveError}
+            </p>
+          )}
+          <Button type="submit" disabled={saving} className="self-start">
             저장
-          </button>
+          </Button>
         </form>
-      </section>
+      </Card>
     </main>
   );
 }
