@@ -6,7 +6,11 @@ import {
   BenchmarkDeltaLabel,
   useBenchmarks,
 } from "@/lib/client/use-benchmarks";
-import { formatKRW } from "@/lib/domain/totals";
+import { formatKRW, formatManwon } from "@/lib/domain/totals";
+import { lowestQuoteIds } from "@/lib/domain/tone";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 
 /** 비교 API 응답의 quotes 요소(총액은 조회 시점 계산값). */
 type CompareQuoteSummary = {
@@ -94,30 +98,33 @@ function SummaryCard({
   minTotal,
   withOptionsTotal,
   perGuest,
+  lowest,
 }: {
   vendorName: string;
   minTotal: string;
   withOptionsTotal: string;
   perGuest: string;
+  lowest: boolean;
 }) {
   return (
-    <div className="rounded-md border border-zinc-200 p-3">
-      <p className="text-sm font-medium text-zinc-900">{vendorName}</p>
-      <dl className="mt-2 flex flex-col gap-1 text-sm">
+    <Card>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm font-medium text-ink-muted">{vendorName}</p>
+        {lowest && <Badge tone="positive">✓ 최저 총액</Badge>}
+      </div>
+      <p className="mt-1 text-[22px] font-bold tracking-tight tabular-nums sm:text-[26px]">{withOptionsTotal}</p>
+      <p className="text-xs text-ink-subtle">옵션 포함 총액</p>
+      <dl className="mt-4 flex flex-col gap-1.5 border-t border-line pt-3 text-sm">
         <div className="flex items-baseline justify-between gap-2">
-          <dt className="text-xs text-zinc-500">최소총액 (필수 항목)</dt>
-          <dd className="font-semibold tabular-nums text-zinc-900">{minTotal}</dd>
+          <dt className="text-ink-muted">최소총액 (필수 항목)</dt>
+          <dd className="font-semibold tabular-nums">{minTotal}</dd>
         </div>
         <div className="flex items-baseline justify-between gap-2">
-          <dt className="text-xs text-zinc-500">옵션포함총액</dt>
-          <dd className="font-semibold tabular-nums text-zinc-900">{withOptionsTotal}</dd>
-        </div>
-        <div className="flex items-baseline justify-between gap-2">
-          <dt className="text-xs text-zinc-500">1인당비용</dt>
-          <dd className="font-semibold tabular-nums text-zinc-900">{perGuest}</dd>
+          <dt className="text-ink-muted">1인당비용</dt>
+          <dd className="font-semibold tabular-nums">{perGuest}</dd>
         </div>
       </dl>
-    </div>
+    </Card>
   );
 }
 
@@ -174,91 +181,115 @@ export default function CompareClient({
   }, [fetchCompare]);
 
   const loading = data === null && error === null;
+  const lowestTotalIds =
+    data === null
+      ? []
+      : lowestQuoteIds(Object.fromEntries(data.quotes.map((quote) => [quote.quoteId, quote.withOptionsTotal])));
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-8 font-sans">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">견적 비교</h1>
-      </header>
+    <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-4 pt-8 pb-16">
+      <PageHeader
+        title="견적 비교"
+        meta={data === null ? undefined : <span>견적 {data.quotes.length}건</span>}
+      />
 
-      {error !== null && <p className="text-sm text-red-600">{error}</p>}
+      {error !== null && (
+        <p role="alert" className="text-sm text-negative">
+          {error}
+        </p>
+      )}
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold text-zinc-900">총액 요약</h2>
-        {loading && (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <SummaryCard vendorName="…" minTotal="…" withOptionsTotal="…" perGuest="…" />
-          </div>
-        )}
-        {data !== null && (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {data.quotes.map((quote) => (
-              <SummaryCard
-                key={quote.quoteId}
-                vendorName={quote.vendorName}
-                minTotal={formatKRW(quote.minTotal)}
-                withOptionsTotal={formatKRW(quote.withOptionsTotal)}
-                perGuest={quote.perGuest === null ? "인원 미정" : formatKRW(quote.perGuest)}
-              />
-            ))}
-          </div>
-        )}
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3" aria-label="총액 요약">
+        {loading && <SummaryCard vendorName="…" minTotal="…" withOptionsTotal="…" perGuest="…" lowest={false} />}
+        {data?.quotes.map((quote) => (
+          <SummaryCard
+            key={quote.quoteId}
+            vendorName={quote.vendorName}
+            minTotal={formatKRW(quote.minTotal)}
+            withOptionsTotal={formatManwon(quote.withOptionsTotal)}
+            perGuest={quote.perGuest === null ? "인원 미정" : formatKRW(quote.perGuest)}
+            lowest={lowestTotalIds.includes(quote.quoteId)}
+          />
+        ))}
       </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold text-zinc-900">항목 비교</h2>
-        <p className="text-xs text-zinc-500">항목이 없는 견적은 &apos;없음&apos;으로 표시됩니다.</p>
-        <p className="text-xs text-zinc-500">
-          금액 아래 &apos;지역 평균 대비&apos;는 같은 지역 참가격 평균과의 차이입니다.
-        </p>
-        {loading && <p className="text-sm text-zinc-500">비교 항목을 불러오는 중…</p>}
+      <Card title="항목 비교">
+        {loading && <p className="text-sm text-ink-muted">비교 항목을 불러오는 중…</p>}
         {data !== null && (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-sm">
+            <table className="w-full min-w-[560px] border-collapse text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 text-left text-xs text-zinc-500">
-                  <th className="py-2 pr-2 align-bottom font-medium">항목</th>
+                <tr className="border-b border-line-strong">
+                  <th className="sticky left-0 z-10 bg-surface py-2.5 pr-3 text-left align-bottom text-[13px] font-medium text-ink-muted">
+                    항목
+                  </th>
                   {data.quotes.map((quote) => (
-                    <th key={quote.quoteId} className="py-2 pr-2 align-bottom font-medium">
-                      <span className="block text-sm font-medium text-zinc-900">
-                        {quote.vendorName}
+                    <th key={quote.quoteId} className="px-3 py-2.5 text-right align-bottom font-normal">
+                      <span className="block text-sm font-semibold text-ink">{quote.vendorName}</span>
+                      <span className="block whitespace-nowrap text-xs tabular-nums text-ink-subtle">
+                        {quote.quoteDate.slice(0, 10)} · 보장 {quote.guestCount}명
                       </span>
-                      <span className="block">{quote.quoteDate.slice(0, 10)}</span>
-                      <span className="block">보장인원 {quote.guestCount}명</span>
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {data.rows.map((row, index) => (
-                  <tr key={row.itemCode ?? `etc-${index}`} className="border-b border-zinc-100">
-                    <th scope="row" className="py-2 pr-2 text-left font-medium text-zinc-700">
-                      {row.label}
-                    </th>
-                    {data.quotes.map((quote) => {
-                      const amount = row.perQuote[quote.quoteId] ?? null;
-                      return amount === null ? (
-                        <td key={quote.quoteId} className="py-2 pr-2">
-                          <span className="rounded bg-amber-50 px-1.5 py-0.5 text-amber-700">없음</span>
-                        </td>
-                      ) : (
-                        <td key={quote.quoteId} className="whitespace-nowrap py-2 pr-2 tabular-nums">
-                          {formatKRW(amount)}
-                          <BenchmarkDeltaLabel
-                            source={benchmarks}
-                            itemCode={row.itemCode}
-                            amount={amount}
-                          />
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
+                {data.rows.map((row, index) => {
+                  const lowest = lowestQuoteIds(row.perQuote);
+                  return (
+                    <tr key={row.itemCode ?? `etc-${index}`} className="border-b border-line">
+                      <th scope="row" className="sticky left-0 z-10 bg-surface py-2.5 pr-3 text-left font-normal text-ink-muted">
+                        {row.label}
+                      </th>
+                      {data.quotes.map((quote) => {
+                        const amount = row.perQuote[quote.quoteId] ?? null;
+                        return (
+                          <td key={quote.quoteId} className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">
+                            {amount === null ? (
+                              <Badge tone="neutral">없음</Badge>
+                            ) : (
+                              <>
+                                <span
+                                  className={lowest.includes(quote.quoteId) ? "font-semibold text-positive" : undefined}
+                                >
+                                  {formatKRW(amount)}
+                                </span>
+                                <BenchmarkDeltaLabel source={benchmarks} itemCode={row.itemCode} amount={amount} />
+                              </>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
               </tbody>
+              <tfoot>
+                <tr className="border-t border-line-strong">
+                  <th scope="row" className="sticky left-0 z-10 whitespace-nowrap bg-surface py-3 pr-3 text-left font-semibold">
+                    옵션 포함 총액
+                  </th>
+                  {data.quotes.map((quote) => (
+                    <td
+                      key={quote.quoteId}
+                      className="whitespace-nowrap px-3 py-3 text-right text-[15px] font-bold tabular-nums"
+                    >
+                      {formatKRW(quote.withOptionsTotal)}
+                    </td>
+                  ))}
+                </tr>
+              </tfoot>
             </table>
           </div>
         )}
-      </section>
+        <p className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-muted">
+          <span>
+            <b className="text-positive">파란 굵은 금액</b> 항목별 최저가
+          </span>
+          <span>&apos;없음&apos; 해당 견적에 없는 항목</span>
+          <span>평균 대비 ±% 같은 지역 참가격 평균과의 차이 (출처: 한국소비자원 참가격)</span>
+        </p>
+      </Card>
     </main>
   );
 }

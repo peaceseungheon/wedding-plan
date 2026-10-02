@@ -42,3 +42,15 @@ const krwFormatter = new Intl.NumberFormat("ko-KR");
 export function formatKRW(n: number): string {
   return `${krwFormatter.format(n)}원`;
 }
+
+const manwonFormatter = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 1 });
+
+/**
+ * 요약 숫자용 만원 표기. 12,400,000 → "1,240만원", 78,000 → "7.8만원".
+ * 1만 원 미만은 formatKRW로 원 단위를 그대로 쓴다. 표·목록처럼 정확한 금액이
+ * 필요한 곳은 이 함수가 아니라 formatKRW를 쓴다.
+ */
+export function formatManwon(n: number): string {
+  if (Math.abs(n) < 10_000) return formatKRW(n);
+  return `${manwonFormatter.format(n / 10_000)}만원`;
+}
