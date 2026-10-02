@@ -9,7 +9,22 @@ import {
 } from "@/lib/client/use-benchmarks";
 import { ITEM_CODES, ITEM_CODE_LABELS } from "@/lib/constants/item-codes";
 import { normalizeQuoteItemAmount } from "@/lib/domain/quote-item";
-import { formatKRW, minTotal, perGuest, withOptionsTotal } from "@/lib/domain/totals";
+import { formatKRW, formatManwon, minTotal, perGuest, withOptionsTotal } from "@/lib/domain/totals";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonClass } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Field, inputClass } from "@/components/ui/field";
+import { PageHeader } from "@/components/ui/page-header";
+import { Stat } from "@/components/ui/stat";
+import {
+  DataTable,
+  headRowClass,
+  numClass,
+  rowClass,
+  stickyCellClass,
+  tdClass,
+  thClass,
+} from "@/components/ui/table";
 
 type QuoteItemRow = {
   id: string;
@@ -58,11 +73,8 @@ const EMPTY_NEW_ITEM: NewItemForm = {
   selected: false,
 };
 
-const inputClass = "rounded-md border border-zinc-300 px-2 py-1 text-sm";
-const buttonClass =
-  "rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50";
-const primaryButtonClass =
-  "rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50";
+/** 여러 줄 입력. inputClass의 고정 높이만 풀어 쓴다. */
+const textareaClass = inputClass.replace("h-10", "min-h-20 py-2");
 
 const CONFIRMED_NOTICE = "확정된 견적의 항목은 수정할 수 없습니다.";
 
@@ -517,168 +529,115 @@ export default function QuoteDetailClient({
 
   const draft = quote?.status === "DRAFT";
   // 총액은 저장 값이 아니라 조회 시점 계산이므로 매 렌더마다 로컬 목록에서 재계산한다.
-  const minTotalText = quote === null ? "…" : formatKRW(minTotal(quote.quoteItems));
+  const minTotalText = quote === null ? "…" : formatManwon(minTotal(quote.quoteItems));
   const withOptionsTotalText =
-    quote === null ? "…" : formatKRW(withOptionsTotal(quote.quoteItems));
+    quote === null ? "…" : formatManwon(withOptionsTotal(quote.quoteItems));
   const perGuestText =
     quote === null
       ? "…"
       : (() => {
           const value = perGuest(quote.quoteItems, quote.guestCount);
-          return value === null ? "인원 미정" : formatKRW(value);
+          return value === null ? "인원 미정" : formatManwon(value);
         })();
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-8 font-sans">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">견적 상세</h1>
-          {quote !== null && (
-            <span
-              className={
-                draft
-                  ? "rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-600"
-                  : "rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700"
-              }
+    <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-4 pt-8 pb-16">
+      <PageHeader
+        title="견적 상세"
+        meta={
+          quote === null ? undefined : (
+            <>
+              {draft ? <Badge tone="neutral">임시</Badge> : <Badge tone="positive">✓ 확정</Badge>}
+              <span className="tabular-nums">
+                {quote.quoteDate.slice(0, 10)} · 보장 {quote.guestCount}명
+              </span>
+            </>
+          )
+        }
+        aside={
+          <div className="flex flex-wrap gap-2">
+            <Link
+              className={buttonClass("secondary")}
+              href={`/projects/${projectId}/quotes/compare?ids=${quoteId}`}
             >
-              {draft ? "임시" : "확정"}
-            </span>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            className={buttonClass}
-            href={`/projects/${projectId}/quotes/compare?ids=${quoteId}`}
-          >
-            비교에 추가
-          </Link>
-          <button className={buttonClass} onClick={() => void toContract()} disabled={contracting}>
-            계약 전환
-          </button>
-          {draft && (
-            <button
-              className={primaryButtonClass}
-              onClick={() => void confirmQuote()}
-              disabled={confirming}
-            >
-              확정
-            </button>
-          )}
-        </div>
-      </header>
+              비교에 추가
+            </Link>
+            <Button variant="secondary" onClick={() => void toContract()} disabled={contracting}>
+              계약 전환
+            </Button>
+            {draft && (
+              <Button onClick={() => void confirmQuote()} disabled={confirming}>
+                확정
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       {quote !== null && !draft && (
-        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          {CONFIRMED_NOTICE}
-        </p>
+        <p className="rounded-lg bg-caution-soft px-3 py-2 text-sm text-caution">! {CONFIRMED_NOTICE}</p>
       )}
       {quote === null &&
         (loadError === null ? (
-          <p className="text-sm text-zinc-500">견적을 불러오는 중…</p>
+          <p className="text-sm text-ink-muted">견적을 불러오는 중…</p>
         ) : (
-          <p className="text-sm text-red-600">{loadError}</p>
+          <p role="alert" className="text-sm text-negative">
+            {loadError}
+          </p>
         ))}
-      {notice !== null && <p className="text-sm text-emerald-700">{notice}</p>}
-      {actionError !== null && <p className="text-sm text-red-600">{actionError}</p>}
+      {notice !== null && (
+        <p role="status" className="text-sm text-positive">
+          ✓ {notice}
+        </p>
+      )}
+      {actionError !== null && (
+        <p role="alert" className="text-sm text-negative">
+          {actionError}
+        </p>
+      )}
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold text-zinc-900">기본정보</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm text-zinc-700">
-            견적일
-            <input
-              className={inputClass}
-              type="date"
-              value={quoteDate}
-              onChange={(e) => {
-                infoTouchedRef.current = true;
-                setQuoteDate(e.target.value);
-              }}
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-zinc-700">
-            하객 인원
-            <input
-              className={inputClass}
-              type="number"
-              min={0}
-              step={1}
-              value={guestCount}
-              onChange={(e) => {
-                infoTouchedRef.current = true;
-                setGuestCount(e.target.value);
-              }}
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-zinc-700">
-            유효기간 (비워 두면 없음)
-            <input
-              className={inputClass}
-              type="date"
-              value={validUntil}
-              onChange={(e) => {
-                infoTouchedRef.current = true;
-                setValidUntil(e.target.value);
-              }}
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-zinc-700">
-            메모
-            <textarea
-              className={inputClass}
-              rows={2}
-              value={notes}
-              onChange={(e) => {
-                infoTouchedRef.current = true;
-                setNotes(e.target.value);
-              }}
-            />
-          </label>
-        </div>
-        <div>
-          <button
-            className={primaryButtonClass}
-            onClick={() => void saveBasicInfo()}
-            disabled={savingInfo || quote === null}
-          >
-            기본정보 저장
-          </button>
-        </div>
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4" aria-label="총액 요약">
+        <Stat label="최소총액 (필수 항목)" value={minTotalText} />
+        <Stat label="옵션 포함 총액" value={withOptionsTotalText} />
+        <Stat label="1인당비용" value={perGuestText} />
       </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold text-zinc-900">항목</h2>
-        <p className="text-xs text-zinc-500">
+      <Card title="항목">
+        <p className="mb-3 text-xs text-ink-muted">
           소계 아래 &apos;지역 평균 대비&apos;는 같은 지역 참가격 평균과의 차이입니다.
         </p>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-sm">
-            <thead>
-              <tr className="border-b border-zinc-200 text-left text-xs text-zinc-500">
-                <th className="py-2 pr-2 font-medium">항목명</th>
-                <th className="py-2 pr-2 font-medium">분류</th>
-                <th className="py-2 pr-2 font-medium">수량</th>
-                <th className="py-2 pr-2 font-medium">단가</th>
-                <th className="py-2 pr-2 font-medium">소계</th>
-                <th className="py-2 pr-2 text-center font-medium">필수</th>
-                <th className="py-2 pr-2 text-center font-medium">선택</th>
-                <th className="py-2 font-medium">관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(quote?.quoteItems ?? []).map((item) => (
-                <tr key={item.id} className="border-b border-zinc-100">
-                  <td className="py-2 pr-2">
+        <DataTable minWidth={880}>
+          <thead>
+            <tr className={headRowClass}>
+              <th className={`${thClass} ${stickyCellClass}`}>항목명</th>
+              <th className={thClass}>분류</th>
+              <th className={`${thClass} text-right`}>수량</th>
+              <th className={`${thClass} text-right`}>단가</th>
+              <th className={`${thClass} text-right`}>소계</th>
+              <th className={`${thClass} text-center`}>필수</th>
+              <th className={`${thClass} text-center`}>선택</th>
+              <th className={thClass}>관리</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(quote?.quoteItems ?? []).map((item) => (
+              <tr key={item.id} className={rowClass}>
+                <td className={`${tdClass} ${stickyCellClass}`}>
+                  <div className="w-40">
                     <input
                       className={inputClass}
+                      aria-label="항목명"
                       value={item.rawName}
                       disabled={!draft}
                       onChange={(e) => changeItem(item.id, { rawName: e.target.value })}
                     />
-                  </td>
-                  <td className="py-2 pr-2">
+                  </div>
+                </td>
+                <td className={tdClass}>
+                  <div className="w-32">
                     <select
                       className={inputClass}
+                      aria-label="분류"
                       value={item.itemCode ?? ""}
                       disabled={!draft}
                       onChange={(e) =>
@@ -692,10 +651,13 @@ export default function QuoteDetailClient({
                         </option>
                       ))}
                     </select>
-                  </td>
-                  <td className="py-2 pr-2">
+                  </div>
+                </td>
+                <td className={tdClass}>
+                  <div className="ml-auto w-20">
                     <input
-                      className={`${inputClass} w-16`}
+                      className={`${inputClass} text-right tabular-nums`}
+                      aria-label="수량"
                       type="number"
                       min={1}
                       step={1}
@@ -703,10 +665,13 @@ export default function QuoteDetailClient({
                       disabled={!draft}
                       onChange={(e) => changeItem(item.id, { qty: parseIntInput(e.target.value) })}
                     />
-                  </td>
-                  <td className="py-2 pr-2">
+                  </div>
+                </td>
+                <td className={tdClass}>
+                  <div className="ml-auto w-28">
                     <input
-                      className={`${inputClass} w-24`}
+                      className={`${inputClass} text-right tabular-nums`}
+                      aria-label="단가"
                       type="number"
                       step={1}
                       value={item.unitPrice}
@@ -715,69 +680,73 @@ export default function QuoteDetailClient({
                         changeItem(item.id, { unitPrice: parseIntInput(e.target.value) })
                       }
                     />
-                  </td>
-                  <td className="whitespace-nowrap py-2 pr-2 tabular-nums">
-                    {formatKRW(item.amount)}
-                    <BenchmarkDeltaLabel
-                      source={benchmarks}
-                      itemCode={item.itemCode}
-                      amount={item.amount}
-                    />
-                  </td>
-                  <td className="py-2 pr-2 text-center">
-                    <input
-                      type="checkbox"
-                      checked={item.required}
-                      disabled={!draft}
-                      onChange={(e) => changeItem(item.id, { required: e.target.checked })}
-                    />
-                  </td>
-                  <td className="py-2 pr-2 text-center">
-                    <input
-                      type="checkbox"
-                      checked={item.selected}
-                      disabled={!draft}
-                      onChange={(e) => changeItem(item.id, { selected: e.target.checked })}
-                    />
-                  </td>
-                  <td className="whitespace-nowrap py-2">
-                    <button
-                      className={buttonClass}
+                  </div>
+                </td>
+                <td className={`${tdClass} ${numClass}`}>
+                  {formatKRW(item.amount)}
+                  <BenchmarkDeltaLabel
+                    source={benchmarks}
+                    itemCode={item.itemCode}
+                    amount={item.amount}
+                  />
+                </td>
+                <td className={`${tdClass} text-center`}>
+                  <input
+                    type="checkbox"
+                    aria-label="필수"
+                    checked={item.required}
+                    disabled={!draft}
+                    onChange={(e) => changeItem(item.id, { required: e.target.checked })}
+                  />
+                </td>
+                <td className={`${tdClass} text-center`}>
+                  <input
+                    type="checkbox"
+                    aria-label="선택"
+                    checked={item.selected}
+                    disabled={!draft}
+                    onChange={(e) => changeItem(item.id, { selected: e.target.checked })}
+                  />
+                </td>
+                <td className={`${tdClass} whitespace-nowrap`}>
+                  <div className="flex gap-1.5">
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => void saveItem(item)}
                       disabled={!draft || savingItemId === item.id}
                     >
                       저장
-                    </button>{" "}
-                    <button
-                      className={buttonClass}
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
                       onClick={() => void deleteItem(item.id)}
                       disabled={!draft || deletingItemId === item.id}
                     >
                       삭제
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </DataTable>
         {quote !== null && quote.quoteItems.length === 0 && (
-          <p className="text-sm text-zinc-500">항목이 없습니다.</p>
+          <p className="mt-3 text-sm text-ink-muted">항목이 없습니다.</p>
         )}
 
         {draft && (
-          <div className="flex flex-col gap-2 rounded-md border border-zinc-200 p-3">
-            <div className="flex flex-wrap items-end gap-2">
-              <label className="flex flex-col gap-1 text-sm text-zinc-700">
-                항목명
+          <div className="mt-4 flex flex-col gap-4 border-t border-line pt-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[2fr_1.5fr_1fr_1.5fr]">
+              <Field label="항목명">
                 <input
                   className={inputClass}
                   value={newItem.rawName}
                   onChange={(e) => setNewItem({ ...newItem, rawName: e.target.value })}
                 />
-              </label>
-              <label className="flex flex-col gap-1 text-sm text-zinc-700">
-                분류
+              </Field>
+              <Field label="분류">
                 <select
                   className={inputClass}
                   value={newItem.itemCode}
@@ -790,103 +759,137 @@ export default function QuoteDetailClient({
                     </option>
                   ))}
                 </select>
-              </label>
-              <label className="flex flex-col gap-1 text-sm text-zinc-700">
-                수량
+              </Field>
+              <Field label="수량">
                 <input
-                  className={`${inputClass} w-16`}
+                  className={`${inputClass} tabular-nums`}
                   type="number"
                   min={1}
                   step={1}
                   value={newItem.qty}
                   onChange={(e) => setNewItem({ ...newItem, qty: e.target.value })}
                 />
-              </label>
-              <label className="flex flex-col gap-1 text-sm text-zinc-700">
-                단가
+              </Field>
+              <Field label="단가">
                 <input
-                  className={`${inputClass} w-24`}
+                  className={`${inputClass} tabular-nums`}
                   type="number"
                   step={1}
                   value={newItem.unitPrice}
                   onChange={(e) => setNewItem({ ...newItem, unitPrice: e.target.value })}
                 />
-              </label>
-              <label className="flex flex-col gap-1 text-sm text-zinc-700">
-                필수
+              </Field>
+            </div>
+            {newItem.itemCode === "DISCOUNT" && (
+              <p className="text-xs text-ink-subtle">금액은 자동으로 음수 처리됩니다</p>
+            )}
+            <div className="flex flex-wrap items-center gap-4">
+              <label className="flex items-center gap-2 text-sm font-medium">
                 <input
                   type="checkbox"
-                  className="mb-2"
                   checked={newItem.required}
                   onChange={(e) => setNewItem({ ...newItem, required: e.target.checked })}
                 />
+                필수
               </label>
-              <label className="flex flex-col gap-1 text-sm text-zinc-700">
-                선택
+              <label className="flex items-center gap-2 text-sm font-medium">
                 <input
                   type="checkbox"
-                  className="mb-2"
                   checked={newItem.selected}
                   onChange={(e) => setNewItem({ ...newItem, selected: e.target.checked })}
                 />
+                선택
               </label>
-              <button
-                className={primaryButtonClass}
-                onClick={() => void addItem()}
-                disabled={adding}
-              >
+              <Button variant="secondary" onClick={() => void addItem()} disabled={adding}>
                 항목 추가
-              </button>
+              </Button>
             </div>
-            {newItem.itemCode === "DISCOUNT" && (
-              <p className="text-xs text-zinc-500">금액은 자동으로 음수 처리됩니다</p>
-            )}
           </div>
         )}
-      </section>
+      </Card>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold text-zinc-900">총액 요약</h2>
-        <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-md border border-zinc-200 p-3">
-            <dt className="text-xs text-zinc-500">최소총액 (필수 항목)</dt>
-            <dd className="text-lg font-semibold tabular-nums text-zinc-900">{minTotalText}</dd>
-          </div>
-          <div className="rounded-md border border-zinc-200 p-3">
-            <dt className="text-xs text-zinc-500">옵션포함총액</dt>
-            <dd className="text-lg font-semibold tabular-nums text-zinc-900">
-              {withOptionsTotalText}
-            </dd>
-          </div>
-          <div className="rounded-md border border-zinc-200 p-3">
-            <dt className="text-xs text-zinc-500">1인당비용</dt>
-            <dd className="text-lg font-semibold tabular-nums text-zinc-900">{perGuestText}</dd>
-          </div>
-        </dl>
-      </section>
-
-      <section className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold text-zinc-900">원본 파일</h2>
+      <Card title="원본 파일">
         {quote === null ? (
-          <p className="text-sm text-zinc-500">…</p>
+          <p className="text-sm text-ink-muted">…</p>
         ) : documents.length === 0 ? (
-          <p className="text-sm text-zinc-500">연결된 원본 파일이 없습니다.</p>
+          <p className="text-sm text-ink-muted">연결된 원본 파일이 없습니다.</p>
         ) : (
-          <ul className="flex flex-col gap-1 text-sm">
+          <ul className="flex flex-col divide-y divide-line text-sm">
             {documents.map((doc) => (
-              <li key={doc.id} className="flex items-baseline gap-2">
+              <li key={doc.id} className="flex items-baseline justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
                 <a
-                  className="font-medium text-zinc-900 underline hover:text-zinc-600"
+                  className="min-w-0 truncate font-medium underline underline-offset-2 hover:text-accent"
                   href={`/api/documents/${doc.id}/file`}
                 >
                   {doc.fileName}
                 </a>
-                <span className="text-xs text-zinc-500">{doc.createdAt.slice(0, 10)}</span>
+                <span className="shrink-0 text-xs tabular-nums text-ink-subtle">{doc.createdAt.slice(0, 10)}</span>
               </li>
             ))}
           </ul>
         )}
-      </section>
+      </Card>
+
+      <Card title="기본정보">
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="견적일">
+              <input
+                className={`${inputClass} tabular-nums`}
+                type="date"
+                value={quoteDate}
+                onChange={(e) => {
+                  infoTouchedRef.current = true;
+                  setQuoteDate(e.target.value);
+                }}
+              />
+            </Field>
+            <Field label="하객 인원">
+              <input
+                className={`${inputClass} tabular-nums`}
+                type="number"
+                min={0}
+                step={1}
+                value={guestCount}
+                onChange={(e) => {
+                  infoTouchedRef.current = true;
+                  setGuestCount(e.target.value);
+                }}
+              />
+            </Field>
+            <Field label="유효기간" hint="비워 두면 없음">
+              <input
+                className={`${inputClass} tabular-nums`}
+                type="date"
+                value={validUntil}
+                onChange={(e) => {
+                  infoTouchedRef.current = true;
+                  setValidUntil(e.target.value);
+                }}
+              />
+            </Field>
+            <Field label="메모">
+              <textarea
+                className={textareaClass}
+                rows={2}
+                value={notes}
+                onChange={(e) => {
+                  infoTouchedRef.current = true;
+                  setNotes(e.target.value);
+                }}
+              />
+            </Field>
+          </div>
+          <Button
+            variant="secondary"
+            className="self-start"
+            onClick={() => void saveBasicInfo()}
+            disabled={savingInfo || quote === null}
+          >
+            기본정보 저장
+          </Button>
+        </div>
+      </Card>
     </main>
   );
 }

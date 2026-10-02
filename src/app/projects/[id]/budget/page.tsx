@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { formatKRW } from "@/lib/domain/totals";
+import { formatManwon } from "@/lib/domain/totals";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { inputClass } from "@/components/ui/field";
+import { PageHeader } from "@/components/ui/page-header";
+import { Stat } from "@/components/ui/stat";
 
 /** 편집 행. id가 null이면 신규(저장 시 생성), amount는 input 문자열 그대로 둔다. */
 type BudgetRow = {
@@ -154,70 +159,76 @@ export default function BudgetPage() {
   }, 0);
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8">
-      <h1 className="text-2xl font-semibold">예산 관리</h1>
+    <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-4 pt-8 pb-16">
+      <PageHeader title="예산 관리" />
 
-      <section className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-lg font-medium">카테고리별 예산</h2>
-          <span className="text-sm text-zinc-600">합계 {formatKRW(total)}</span>
-        </div>
-        {loadError !== null && <p className="text-sm text-red-600">{loadError}</p>}
-        {rows === null && loadError === null && <p className="text-sm text-zinc-600">불러오는 중...</p>}
-        {rows !== null && (
-          <ul className="flex flex-col gap-2">
-            {rows.map((row, index) => (
-              <li key={row.id ?? `new-${index}`} className="flex flex-wrap items-center gap-2 rounded border border-zinc-200 p-3">
-                {row.id !== null ? (
-                  <span className="min-w-32 flex-1 text-sm font-medium">{row.name}</span>
-                ) : (
-                  <input
-                    className="min-w-32 flex-1 rounded border border-zinc-300 px-3 py-2 text-sm"
-                    placeholder="새 카테고리 이름"
-                    value={row.name}
-                    onChange={(event) => updateName(index, event.target.value)}
-                  />
-                )}
-                <input
-                  type="number"
-                  aria-label={`${row.name || "새 카테고리"} 예산`}
-                  className="w-32 rounded border border-zinc-300 px-3 py-2 text-sm"
-                  value={row.amount}
-                  onChange={(event) => updateAmount(index, event.target.value)}
-                />
-                <button
-                  type="button"
-                  onClick={() => removeRow(index)}
-                  className="rounded border border-zinc-300 px-3 py-1.5 text-sm text-red-600"
-                >
-                  삭제
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {saveError !== null && <p className="text-sm text-red-600">{saveError}</p>}
-        {savedAt !== null && saveError === null && (
-          <p className="text-sm text-emerald-700">저장되었습니다.</p>
-        )}
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={addRow}
-            className="rounded border border-zinc-300 px-4 py-2 text-sm"
-          >
-            행 추가
-          </button>
-          <button
-            type="button"
-            onClick={() => void save()}
-            disabled={saving || rows === null}
-            className="rounded bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-50"
-          >
-            저장
-          </button>
-        </div>
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4" aria-label="예산 요약">
+        <Stat label="예산 합계" value={rows === null ? "…" : formatManwon(total)}>
+          {rows !== null && <span className="text-ink-subtle">카테고리 {rows.length}개</span>}
+        </Stat>
       </section>
+
+      <Card title="카테고리별 예산">
+        <div className="flex flex-col gap-4">
+          {loadError !== null && (
+            <p role="alert" className="text-sm text-negative">
+              {loadError}
+            </p>
+          )}
+          {rows === null && loadError === null && <p className="text-sm text-ink-muted">불러오는 중...</p>}
+          {rows !== null && (
+            <ul className="flex flex-col divide-y divide-line">
+              {rows.map((row, index) => (
+                <li
+                  key={row.id ?? `new-${index}`}
+                  className="flex items-center gap-2 py-3 first:pt-0 last:pb-0"
+                >
+                  {row.id !== null ? (
+                    <span className="min-w-0 flex-1 text-sm font-medium">{row.name}</span>
+                  ) : (
+                    <input
+                      className={`${inputClass} min-w-0 flex-1`}
+                      placeholder="새 카테고리 이름"
+                      value={row.name}
+                      onChange={(event) => updateName(index, event.target.value)}
+                    />
+                  )}
+                  <div className="w-28 shrink-0 sm:w-36">
+                    <input
+                      type="number"
+                      aria-label={`${row.name || "새 카테고리"} 예산`}
+                      className={`${inputClass} text-right tabular-nums`}
+                      value={row.amount}
+                      onChange={(event) => updateAmount(index, event.target.value)}
+                    />
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => removeRow(index)}>
+                    삭제
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {saveError !== null && (
+            <p role="alert" className="text-sm text-negative">
+              {saveError}
+            </p>
+          )}
+          {savedAt !== null && saveError === null && (
+            <p role="status" className="text-sm text-positive">
+              ✓ 저장되었습니다.
+            </p>
+          )}
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={addRow}>
+              행 추가
+            </Button>
+            <Button variant="primary" onClick={() => void save()} disabled={saving || rows === null}>
+              저장
+            </Button>
+          </div>
+        </div>
+      </Card>
     </main>
   );
 }
