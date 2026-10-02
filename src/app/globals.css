@@ -1,26 +1,42 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* 폰트 변수는 layout.tsx의 next/font가 html에 주입한다. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-pretendard), system-ui, sans-serif;
+  --font-serif: var(--font-noto-serif-kr), serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* 색 토큰. 값의 출처와 용도는 docs/design-system.md 4.1을 따른다. */
+@theme {
+  --color-canvas: #faf7f2;
+  --color-surface: #ffffff;
+  --color-line: #ece6dd;
+  --color-line-strong: #d9d0c3;
+  --color-ink: #2a2420;
+  --color-ink-muted: #6b625a;
+  --color-ink-subtle: #9a9087;
+  --color-accent: #4e6b58;
+  --color-accent-soft: #e6eee8;
+  --color-positive: #3b6ea5;
+  --color-positive-soft: #e6eef7;
+  --color-caution: #a36a14;
+  --color-caution-soft: #fbf0dc;
+  --color-negative: #b3402f;
+  --color-negative-soft: #f9e4e0;
+  --color-info: #6a5d8c;
+  --color-info-soft: #eeebf4;
+  --color-neutral-soft: #f1ece5;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-size: 15px;
+  accent-color: var(--color-accent);
+  caret-color: var(--color-accent);
+}
+
+::selection {
+  background: var(--color-accent-soft);
+  color: var(--color-ink);
 }
