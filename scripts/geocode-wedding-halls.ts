@@ -1,23 +1,36 @@
 // 예식장 주소 백필 geocoding CLI — 좌표(latitude/longitude)가 없는 예식장 행에 대해
-// 카카오 로컬 주소 검색으로 위도·경도를 채운다. 사용: npm run geocode:wedding-halls
+// 활성 지도 프로바이더(기본 네이버, NEXT_PUBLIC_MAP_PROVIDER=kakao이면 카카오)의
+// 주소 좌표 변환으로 위도·경도를 채운다. 사용: npm run geocode:wedding-halls
 // 홀 단위 fail-soft(경고 후 스킵), 요청마다 스로틀. 재실행하면 좌표가 있는 행은 건너뛴다.
 import 'dotenv/config';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { PrismaClient } from '../generated/prisma/client';
-import { searchAddress } from '../src/lib/adapters/kakao';
+import { activeMapProvider, searchAddress } from '../src/lib/adapters/geocode';
 
 const REQUEST_DELAY_MS = 60;
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
+function assertProviderEnv(provider: 'kakao' | 'naver'): void {
+  const missing =
+    provider === 'kakao'
+      ? ['KAKAO_API_KEY']
+      : ['NAVER_MAP_CLIENT_ID', 'NAVER_MAP_CLIENT_SECRET'];
+  for (const name of missing) {
+    const value = process.env[name];
+    if (value === undefined || value === '') {
+      throw new Error(`${name} 환경변수가 없습니다 (.env 참조)`);
+    }
+  }
+}
 
 async function main(): Promise<void> {
   const databaseUrl = process.env.DATABASE_URL;
   if (databaseUrl === undefined || databaseUrl === '') {
     throw new Error('DATABASE_URL 환경변수가 없습니다 (.env 참조)');
   }
-  if (process.env.KAKAO_API_KEY === undefined || process.env.KAKAO_API_KEY === '') {
-    throw new Error('KAKAO_API_KEY 환경변수가 없습니다 (.env 참조)');
-  }
+  const provider = activeMapProvider();
+  assertProviderEnv(provider);
 
   const prisma = new PrismaClient({ adapter: new PrismaMariaDb(databaseUrl) });
   try {
@@ -26,6 +39,7 @@ async function main(): Promise<void> {
       select: { id: true, venueName: true, address: true },
       orderBy: [{ region: 'asc' }, { venueName: 'asc' }],
     });
+    console.log(`지도 프로바이더: ${provider}`);
     console.log(`좌표가 없는 예식장: ${halls.length}곳`);
 
     let geocoded = 0;

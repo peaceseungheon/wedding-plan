@@ -22,6 +22,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-kakao-maps-sdk": "^1.2.2",
+    "react-naver-maps": "^0.2.2",
     "tsx": "^4.23.15",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
@@ -30,6 +31,7 @@
     "@tailwindcss/postcss": "^4",
     "@testing-library/react": "^16.3.3",
     "@types/bcryptjs": "^2.4.6",
+    "@types/navermaps": "^3.9.2",
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",

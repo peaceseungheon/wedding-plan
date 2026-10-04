@@ -97,5 +97,5 @@
 - Vitest 외 테스트 프레임워크(Jest 등) 도입 금지.
 - 도메인 함수에 Prisma·Next.js 의존 넣기 금지. 총액 계산 결과를 DB에 저장하지 않고 조회 시점마다 계산한다.
 - 총액 계산 엔진 규칙(최소총액, 옵션포함총액, 1인당비용, DISCOUNT 부호 정규화)을 임의로 바꾸지 않는다. 규칙 변경은 계획 수정과 사용자 확인을 거친다.
-- 클라이언트 컴포넌트에서 Kakao API나 외부 어댑터를 직접 호출하는 금지. 외부 연동은 서버 어댑터 경유로만 하고, API 키는 응답에 노출하지 않는다. 단 카카오맵 Web SDK의 지도 렌더링은 예외로 한다 — `NEXT_PUBLIC_KAKAO_JS_KEY`(도메인 등록 전제)로 클라이언트에서 로드하고, 좌표 변환·장소 검색 같은 데이터 연동은 여전히 서버 어댑터(`src/lib/adapters/kakao.ts`) 경로로만 한다.
+- 클라이언트 컴포넌트에서 Kakao/Naver API나 외부 어댑터를 직접 호출하는 금지. 외부 연동은 서버 어댑터 경유로만 하고, API 키는 응답에 노출하지 않는다. 단 지도 Web SDK(카카오맵·네이버맵)의 지도 렌더링은 예외로 한다 — 공개 키(`NEXT_PUBLIC_KAKAO_JS_KEY`, `NEXT_PUBLIC_NAVER_MAP_CLIENT_ID`, 각각 도메인/Web 서비스 URL 등록 전제)로 클라이언트에서 로드하고, 좌표 변환·장소 검색 같은 데이터 연동은 여전히 서버 어댑터(`src/lib/adapters/`의 `kakao.ts`·`naver.ts`, 디스패처 `geocode.ts`) 경로로만 한다. 지도 프로바이더 전환은 `NEXT_PUBLIC_MAP_PROVIDER`(`kakao`|`naver`, 기본 `naver`)로 한다.
 - API 경계에서 날짜를 자유 형식으로 주고받지 않는다. 날짜는 ISO 8601 문자열로 직렬화한다.
