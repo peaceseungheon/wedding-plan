@@ -29,6 +29,11 @@ npm run dev
 | DATABASE_URL | MySQL 접속 문자열. 포트는 아래 안내대로 3307 |
 | SESSION_SECRET | 세션 서명용 시크릿. `openssl rand -base64 32`로 생성 |
 | KAKAO_API_KEY | 선택. 카카오 로컬 검색 API 키. 없으면 업체 수동 등록으로 대체 |
+| NEXT_PUBLIC_KAKAO_JS_KEY | 선택. 카카오맵 Web SDK(예식장 위치 지도)용 JavaScript 키. 없으면 지도 대신 안내 카드가 표시된다 |
+| NAVER_MAP_CLIENT_ID | 선택. NCP Maps geocoding(예식장 좌표 변환)용 Client ID |
+| NAVER_MAP_CLIENT_SECRET | 선택. NCP Maps geocoding용 Client Secret |
+| NEXT_PUBLIC_NAVER_MAP_CLIENT_ID | 선택. 네이버맵 Web Dynamic Map용 Client ID(geocoding Client ID와 같은 값). 없으면 지도 대신 안내 카드가 표시된다 |
+| NEXT_PUBLIC_MAP_PROVIDER | 선택. 지도 프로바이더 `kakao` 또는 `naver`(기본값) |
 | UPLOAD_DIR | 업로드 문서 저장 디렉터리. 기본값 `storage/uploads` |
 
 **포트 3307 안내**: docker compose는 MySQL을 `127.0.0.1:3307`로 노출한다(컨테이너 내부는 3306 그대로). 호스트의 3306은 네이티브 MySQL이 이미 점유하고 있는 머신이 많아, DATABASE_URL의 포트를 3307로 맞춰야 연결된다. `.env.example`에 이미 반영돼 있다.

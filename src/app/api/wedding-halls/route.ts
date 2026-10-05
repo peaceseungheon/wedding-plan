@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
  * 예식장 공개자료(wedding_hall_disclosures) 목록. region은 선택 필터다 —
  * 값이 비거나 없으면 전체 지역을 반환한다. 목록 카드에는 가격 항목 수만
  * 노출하고 항목 본문은 상세 API(/api/wedding-halls/[id])에서 내려준다.
+ * latitude·longitude는 위치 지도 렌더링용 좌표다 — 좌표 변환(geocode) 전이면 null.
  */
 export async function GET(req: Request): Promise<NextResponse> {
   const user = await requireUser(req);
@@ -32,6 +33,8 @@ export async function GET(req: Request): Promise<NextResponse> {
       venueName: row.venueName,
       address: row.address,
       phone: row.phone,
+      latitude: row.latitude,
+      longitude: row.longitude,
       disclosedAt: row.disclosedAt === null ? null : row.disclosedAt.toISOString(),
       priceItemCount: row._count.priceItems,
     })),

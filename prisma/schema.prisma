@@ -209,6 +209,8 @@ model wedding_hall_disclosures {
   venueName   String    @db.Text
   address     String?   @db.Text
   phone       String?
+  latitude    Float?
+  longitude   Float?
   fileRgtnSeq Int?
   fileName    String?   @db.Text
   disclosedAt DateTime?
