@@ -13,6 +13,12 @@ export type KakaoPlace = {
   readonly roadAddress: string;
   readonly phone: string;
   readonly placeUrl: string;
+  /**
+   * 키워드 검색 document의 y(위도)·x(경도). 좌표는 선택 정보라 누락·비유한값이면
+   * null로 정규화한다 — 장소 자체는 유효해 목록에는 남고 지도 마커만 생략된다.
+   */
+  readonly latitude: number | null;
+  readonly longitude: number | null;
 };
 
 /** ok=false는 키 없음·네트워크 실패·non-2xx·응답 파싱 실패를 하나로 합친 fallback 신호다. */
@@ -48,6 +54,9 @@ function parseDocument(value: unknown): KakaoPlace | null {
     roadAddress: text(value.road_address_name),
     phone: text(value.phone),
     placeUrl: text(value.place_url),
+    // 카카오 좌표는 문자열이며 x=경도, y=위도다(축이 바뀌면 마커가 엉뚱한 곳에 찍힌다).
+    latitude: coordinate("y" in value ? value.y : undefined),
+    longitude: coordinate("x" in value ? value.x : undefined),
   };
 }
 

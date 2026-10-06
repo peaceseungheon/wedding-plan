@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field, inputClass } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/page-header";
+import { PlaceMap, type PlaceMarker } from "@/components/place-map";
 
 /** 스키마 VENDOR_CATEGORY enum 값. 라벨은 페이지 로컬 상수로 둔다. */
 const CATEGORY_OPTIONS = [
@@ -52,6 +53,8 @@ type SearchPlace = {
   readonly roadAddress: string;
   readonly phone: string;
   readonly placeUrl: string;
+  readonly latitude: number | null;
+  readonly longitude: number | null;
 };
 
 type SearchPayload = {
@@ -159,7 +162,19 @@ function parseSearchPlace(value: unknown): SearchPlace | null {
   if (typeof phone !== "string") return null;
   const placeUrl = "placeUrl" in value ? value.placeUrl : undefined;
   if (typeof placeUrl !== "string") return null;
-  return { placeName, address, roadAddress, phone, placeUrl };
+  // 좌표는 카카오 문서의 x/y를 서버가 number|null로 정규화해 내려준다.
+  // 없는 문서도 결과 자체는 유효해 null을 유지한다(마커만 생략).
+  const latitude = "latitude" in value ? value.latitude : undefined;
+  const longitude = "longitude" in value ? value.longitude : undefined;
+  return {
+    placeName,
+    address,
+    roadAddress,
+    phone,
+    placeUrl,
+    latitude: typeof latitude === "number" ? latitude : null,
+    longitude: typeof longitude === "number" ? longitude : null,
+  };
 }
 
 function parseSearchPayload(body: unknown): SearchPayload | null {
@@ -200,6 +215,13 @@ export default function VendorsPage() {
   const [manual, setManual] = useState<ManualForm>(EMPTY_MANUAL);
   const [manualError, setManualError] = useState<string | null>(null);
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ category: VendorCategory; memo: string }>({
+    category: "WEDDING_HALL",
+    memo: "",
+  });
+  const [editError, setEditError] = useState<string | null>(null);
+
   /** 401이면 /login으로 보낸다(태스크 지정 동작). */
   const api = useCallback(
     async (path: string, init?: RequestInit): Promise<ApiResult> => {
@@ -233,6 +255,24 @@ export default function VendorsPage() {
   useEffect(() => {
     void loadVendors();
   }, [loadVendors]);
+
+  // 좌표가 있는 결과만 마커로 만든다. 없는 결과는 목록에만 남는다.
+  const searchMarkers = useMemo<readonly PlaceMarker[]>(() => {
+    return places.flatMap((place, index): PlaceMarker[] => {
+      if (place.latitude === null || place.longitude === null) return [];
+      return [
+        {
+          id: `${place.placeName}-${index}`,
+          name: place.placeName,
+          address: place.roadAddress.length > 0 ? place.roadAddress : place.address,
+          latitude: place.latitude,
+          longitude: place.longitude,
+          detailUrl: place.placeUrl.length > 0 ? place.placeUrl : undefined,
+          detailExternal: true,
+        },
+      ];
+    });
+  }, [places]);
 
   async function handleSearch(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -290,6 +330,50 @@ export default function VendorsPage() {
       void loadVendors();
     } else if (result.status !== 401) {
       setListError(apiError(result.body, "즐겨찾기 변경에 실패했습니다."));
+    }
+  }
+
+  function startEdit(row: ProjectVendorRow): void {
+    setEditingId(row.id);
+    setEditForm({ category: row.vendor.category, memo: row.memo ?? "" });
+    setEditError(null);
+  }
+
+  function cancelEdit(): void {
+    setEditingId(null);
+    setEditError(null);
+  }
+
+  async function submitEdit(event: FormEvent<HTMLFormElement>, row: ProjectVendorRow): Promise<void> {
+    event.preventDefault();
+    const memo = editForm.memo.trim();
+    // 빈 문자열은 null — PUT 3상태 규약에서 "메모 삭제"를 뜻한다.
+    const result = await api(`/api/projects/${projectId}/vendors/${row.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category: editForm.category, memo: memo.length === 0 ? null : memo }),
+    });
+    if (result.ok) {
+      cancelEdit();
+      void loadVendors();
+    } else if (result.status !== 401) {
+      setEditError(apiError(result.body, "수정에 실패했습니다."));
+    }
+  }
+
+  async function removeVendor(row: ProjectVendorRow): Promise<void> {
+    const confirmed = window.confirm(
+      `${row.vendor.name} 등록을 삭제할까요? 등록된 견적도 함께 사라집니다.`,
+    );
+    if (!confirmed) return;
+    const result = await api(`/api/projects/${projectId}/vendors/${row.id}`, {
+      method: "DELETE",
+    });
+    if (result.ok) {
+      if (editingId === row.id) cancelEdit();
+      void loadVendors();
+    } else if (result.status !== 401) {
+      setListError(apiError(result.body, "삭제에 실패했습니다."));
     }
   }
 
@@ -352,10 +436,60 @@ export default function VendorsPage() {
                   <Badge tone="neutral">후보</Badge>
                 )}
                 <span className="ml-auto tabular-nums text-ink-muted">견적 {row.quoteCount}건</span>
+                <Button variant="ghost" size="sm" onClick={() => startEdit(row)}>
+                  수정
+                </Button>
+                <Button variant="danger" size="sm" onClick={() => void removeVendor(row)}>
+                  삭제
+                </Button>
               </div>
               {row.vendor.address !== null && <p className="text-ink-muted">{row.vendor.address}</p>}
               {row.vendor.phone !== null && <p className="tabular-nums text-ink-muted">{row.vendor.phone}</p>}
               {row.memo !== null && <p className="text-ink-subtle">메모: {row.memo}</p>}
+              {editingId === row.id && (
+                <form onSubmit={(event) => void submitEdit(event, row)} className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <select
+                      className={`${inputClass} h-8 w-auto`}
+                      value={editForm.category}
+                      onChange={(event) => {
+                        const next = event.target.value;
+                        if (!isVendorCategory(next)) return;
+                        setEditForm((prev) => ({ ...prev, category: next }));
+                      }}
+                      aria-label="분류"
+                    >
+                      {CATEGORY_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="text-xs text-ink-muted">메모를 비우면 저장 시 삭제된다.</span>
+                  </div>
+                  <textarea
+                    className={`${inputClass} h-auto py-2`}
+                    rows={2}
+                    value={editForm.memo}
+                    onChange={(event) => setEditForm((prev) => ({ ...prev, memo: event.target.value }))}
+                    aria-label="메모"
+                    placeholder="메모"
+                  />
+                  {editError !== null && (
+                    <p role="alert" className="text-sm text-negative">
+                      {editError}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button type="submit" variant="secondary" size="sm">
+                      저장
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={cancelEdit}>
+                      취소
+                    </Button>
+                  </div>
+                </form>
+              )}
             </li>
           ))}
         </ul>
@@ -434,6 +568,8 @@ export default function VendorsPage() {
           )}
         </div>
       </Card>
+
+      {searchMarkers.length > 0 && <PlaceMap title="검색 결과 지도" markers={searchMarkers} />}
 
       <Card
         title="직접 등록"

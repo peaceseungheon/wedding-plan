@@ -66,6 +66,8 @@ describe("searchVendors", () => {
           roadAddress: "서울특별시 중구 을지로 12",
           phone: "02-1234-5678",
           placeUrl: "http://place.map.kakao.com/111",
+          latitude: null,
+          longitude: null,
         },
         {
           placeName: "더 라움",
@@ -73,6 +75,64 @@ describe("searchVendors", () => {
           roadAddress: "",
           phone: "",
           placeUrl: "http://place.map.kakao.com/222",
+          latitude: null,
+          longitude: null,
+        },
+      ],
+    });
+  });
+
+  it("maps document x/y into latitude/longitude, normalizing invalid values to null", async () => {
+    vi.stubEnv("KAKAO_API_KEY", API_KEY);
+    const fetchMock = stubFetch();
+    fetchMock.mockResolvedValue(
+      jsonResponse(200, {
+        documents: [
+          {
+            place_name: "라온제나 웨딩컨벤션",
+            address_name: "서울특별시 중구 을지로 12",
+            road_address_name: "서울특별시 중구 을지로 12",
+            phone: "02-1234-5678",
+            place_url: "http://place.map.kakao.com/111",
+            x: "126.9784147",
+            y: "37.5666805",
+          },
+          {
+            place_name: "더 라움",
+            address_name: "서울특별시 송파구 올림픽로 35",
+            road_address_name: "",
+            phone: "",
+            place_url: "http://place.map.kakao.com/222",
+            x: "not-a-number",
+            y: "",
+          },
+        ],
+      }),
+    );
+
+    const result = await searchVendors("웨딩홀");
+
+    // 좌표 계약: number | null. 변환 실패(빈 문자열/숫자 아님)는 null이 되되 장소 자체는 버리지 않는다 — 목록에는 남고 마커만 생략된다.
+    expect(result).toEqual({
+      ok: true,
+      results: [
+        {
+          placeName: "라온제나 웨딩컨벤션",
+          address: "서울특별시 중구 을지로 12",
+          roadAddress: "서울특별시 중구 을지로 12",
+          phone: "02-1234-5678",
+          placeUrl: "http://place.map.kakao.com/111",
+          latitude: 37.5666805,
+          longitude: 126.9784147,
+        },
+        {
+          placeName: "더 라움",
+          address: "서울특별시 송파구 올림픽로 35",
+          roadAddress: "",
+          phone: "",
+          placeUrl: "http://place.map.kakao.com/222",
+          latitude: null,
+          longitude: null,
         },
       ],
     });

@@ -345,14 +345,14 @@ components:
 ### Date Chip (다가오는 결제)
 44px 폭의 테두리 상자에 일(16px 굵게)과 월(11px Pencil Note)을 위아래로 쌓는다. 결제 행의 왼쪽 기준점이다.
 
-### Map (예식장 위치 지도)
-프로바이더 추상화를 둔 화면 전용 지도 컴포넌트다. `NEXT_PUBLIC_MAP_PROVIDER`(`kakao`|`naver`, 기본 `naver`)가 셸(`wedding-hall-map.tsx`)에서 캔버스를 고르고, 카카오(`kakao-map-canvas.tsx`, `react-kakao-maps-sdk`)와 네이버(`naver-map-canvas.tsx`, `react-naver-maps`) 캔버스가 같은 마커 데이터와 카드 규격을 지킨다. 시스템의 유일한 제3의 캔버스 예외다.
+### Map (위치 지도)
+프로바이더 추상화를 둔 범용 지도 컴포넌트다. 셸(`place-map.tsx`, `PlaceMap`)이 `NEXT_PUBLIC_MAP_PROVIDER`(`kakao`|`naver`, 기본 `naver`)로 캔버스를 고르고, 카카오(`kakao-map-canvas.tsx`, `react-kakao-maps-sdk`)와 네이버(`naver-map-canvas.tsx`, `react-naver-maps`) 캔버스가 같은 마커 데이터(`PlaceMarker` — 이름·부제목·좌표·선택 링크)와 카드 규격을 지킨다. 소비자는 마커 배열로 변환해 넘긴다: 예식장 지도(`wedding-hall-map.tsx`)는 얇은 어댑터로 앱 내 상세 링크를 달고, 업체 검색 결과 지도는 카카오 장소 페이지로 새 탭 링크를 단다. 시스템의 유일한 제3의 캔버스 예외다.
 
 - **The Third-Party Canvas Rule.** 지도 타일·마커·클러스터는 지도 SDK(카카오·네이버)가 그리므로 디자인 토큰이 적용되지 않는다. 토큰 규칙은 컨테이너와 오버레이에만 적용한다.
-- **컨테이너:** 공용 `Card`("위치 지도", 우측 상단 `N곳` 고정폭 숫자) 안에 높이 280px(모바일)/420px(`sm` 이상)의 지도를 괘선으로 잘라 넣는다.
-- **마커 오버레이:** 마커 클릭 시 뜨는 커스텀 오버레이 카드는 토큰을 쓴다 — Clean Sheet 바탕, Ruled Line 괘선, Sheet lift 그림자, 업체명·지역·"상세 보기 →" 링크(Faded Walnut, hover 시 세이지).
+- **컨테이너:** 공용 `Card`(제목은 소비자가 정한다 — "위치 지도", "검색 결과 지도" 등. 우측 상단 `N곳` 고정폭 숫자) 안에 높이 280px(모바일)/420px(`sm` 이상)의 지도를 괘선으로 잘라 넣는다.
+- **마커 오버레이:** 마커 클릭 시 뜨는 커스텀 오버레이 카드는 토큰을 쓴다 — Clean Sheet 바탕, Ruled Line 괘선, Sheet lift 그림자, 이름·부제목(예식장은 지역, 업체는 주소)·"상세 보기 →" 링크(Faded Walnut, hover 시 세이지). 링크는 없을 수도 있다.
 - **프로바이더 차이:** 클러스터링은 카카오 캔버스만 제공한다(네이버 SDK에 공식 클러스터러가 없다). 네이버 캔버스는 마커를 직접 찍고 뭉침은 지역 필터와 줌으로 해소한다.
-- **상태:** 좌표 없음·키 없음·로딩·실패는 모두 지도 대신 공용 카드와 토큰으로 된 안내 문구로 렌더한다. 지도 공개 키(`NEXT_PUBLIC_KAKAO_JS_KEY`/`NEXT_PUBLIC_NAVER_MAP_CLIENT_ID`, 도메인·Web 서비스 URL 등록 전제)로 클라이언트에서 로드하고, 좌표 변환은 서버 어댑터가 미리 DB에 저장한다.
+- **상태:** 좌표 없음(안내 문구는 화면별로 전달)·키 없음·로딩·실패는 모두 지도 대신 공용 카드와 토큰으로 된 안내 문구로 렌더한다. 지도 공개 키(`NEXT_PUBLIC_KAKAO_JS_KEY`/`NEXT_PUBLIC_NAVER_MAP_CLIENT_ID`, 도메인·Web 서비스 URL 등록 전제)로 클라이언트에서 로드한다. 예식장 좌표는 서버 어댑터가 미리 DB에 저장하고, 업체 검색 좌표는 검색 응답에 실려 온다(없으면 목록에만 남고 마커는 생략).
 
 ### Comparison Table (견적 비교)
 헤더 하단과 합계 행 상단은 Total Rule, 일반 행은 Ruled Line으로 나눈다. 업체 열은 우측 정렬하고, 항목별 최저가는 Ledger Blue 굵은 글자로, 없는 항목은 neutral 배지로 표시한다. 표 아래에 색 의미와 출처(한국소비자원 참가격) 범례를 단다.
