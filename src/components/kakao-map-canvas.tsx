@@ -11,26 +11,28 @@ import {
 } from "react-kakao-maps-sdk";
 import { Card } from "@/components/ui/card";
 import { computeMapViewport } from "@/lib/domain/map-viewport";
-import type { WeddingHallMapMarker } from "./wedding-hall-map";
+import type { PlaceMarker } from "./place-map";
 
 /** 카카오맵 캔버스. 카카오 JavaScript 키는 도메인 등록으로 보호되는 공개 키다. */
 export function KakaoMapCanvas({
-  halls,
+  title,
+  markers,
   appkey,
 }: {
-  halls: readonly WeddingHallMapMarker[];
+  title: string;
+  markers: readonly PlaceMarker[];
   appkey: string;
 }) {
   const [loading, error] = useKakaoLoader({ appkey, libraries: ["clusterer"] });
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const viewport = useMemo(() => computeMapViewport(halls), [halls]);
-  const selectedHall = useMemo(
-    () => halls.find((hall) => hall.id === selectedId) ?? null,
-    [halls, selectedId],
+  const viewport = useMemo(() => computeMapViewport(markers), [markers]);
+  const selected = useMemo(
+    () => markers.find((marker) => marker.id === selectedId) ?? null,
+    [markers, selectedId],
   );
 
   return (
-    <Card title="위치 지도" action={<CountLabel count={halls.length} />}>
+    <Card title={title} action={<CountLabel count={markers.length} />}>
       {loading ? (
         <div className="flex h-[280px] items-center justify-center rounded-lg border border-line sm:h-[420px]">
           <p className="text-sm text-ink-muted">지도를 불러오는 중…</p>
@@ -52,31 +54,42 @@ export function KakaoMapCanvas({
             onClick={() => setSelectedId(null)}
           >
             <MarkerClusterer averageCenter minLevel={6}>
-              {halls.map((hall) => (
+              {markers.map((marker) => (
                 <MapMarker
-                  key={hall.id}
-                  position={{ lat: hall.latitude, lng: hall.longitude }}
-                  title={hall.venueName}
+                  key={marker.id}
+                  position={{ lat: marker.latitude, lng: marker.longitude }}
+                  title={marker.name}
                   onClick={() =>
-                    setSelectedId((previous) => (previous === hall.id ? null : hall.id))
+                    setSelectedId((previous) => (previous === marker.id ? null : marker.id))
                   }
                 />
               ))}
             </MarkerClusterer>
-            {selectedHall ? (
+            {selected ? (
               <CustomOverlayMap
-                position={{ lat: selectedHall.latitude, lng: selectedHall.longitude }}
+                position={{ lat: selected.latitude, lng: selected.longitude }}
                 yAnchor={1.4}
               >
                 <div className="w-56 rounded-lg border border-line bg-surface p-3 shadow-[0_1px_2px_rgb(42_36_32/0.04)]">
-                  <p className="text-sm font-semibold">{selectedHall.venueName}</p>
-                  <p className="mt-0.5 text-xs text-ink-muted">{selectedHall.region}</p>
-                  <Link
-                    href={`/wedding-halls/${selectedHall.id}`}
-                    className="mt-2 inline-block text-[13px] text-ink-muted hover:text-accent"
-                  >
-                    상세 보기 →
-                  </Link>
+                  <p className="text-sm font-semibold">{selected.name}</p>
+                  <p className="mt-0.5 text-xs text-ink-muted">{selected.address}</p>
+                  {selected.detailUrl === undefined ? null : selected.detailExternal ? (
+                    <a
+                      href={selected.detailUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-block text-[13px] text-ink-muted hover:text-accent"
+                    >
+                      상세 보기 →
+                    </a>
+                  ) : (
+                    <Link
+                      href={selected.detailUrl}
+                      className="mt-2 inline-block text-[13px] text-ink-muted hover:text-accent"
+                    >
+                      상세 보기 →
+                    </Link>
+                  )}
                 </div>
               </CustomOverlayMap>
             ) : null}
